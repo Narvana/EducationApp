@@ -4,7 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "babel src --out-dir dist",
+    "clean": "rimraf dist",
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "jest --runInBand --coverage",
+    "test:unit": "jest tests/unit --runInBand --coverage",
+    "test:integration": "jest tests/integration --runInBand --detectOpenHandles --forceExit --coverage",
+    "filter-logs": "node src/Logs/filterLog.js"
   },
   "keywords": [],
   "author": "",
