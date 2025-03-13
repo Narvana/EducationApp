@@ -3,6 +3,7 @@ const Instructor = require("../models/instructor");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const generateAccessToken = require("../utils/token/generateAccessToken");
+const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 
 // Register Super Admin (Only for first-time setup)
 const registerSuperAdmin = async (req, res) => {
@@ -41,7 +42,6 @@ const createInstructor = async (req, res) => {
   const { name, email, password, contact, idProof, role } = req.body;
 
   try {
-
     let instructorExists = await Instructor.findOne({ email });
     if (instructorExists)
       return res.status(400).json({ msg: "Instructor already exists" });
@@ -65,6 +65,17 @@ const createInstructor = async (req, res) => {
   }
 };
 
+const getInstructors = async (req, res) => {
+  try {
+    const instructors = await Instructor.find();
+    res
+      .status(200)
+      .json(ApiSuccess(200, instructors, "Instructors fetched successfully!"));
+  } catch (error) {
+    res.status(500).json(ApiErrors(500, { error: error.message }));
+  }
+};
+
 // Login
 const loginAdmin = async (req, res) => {
   const { email, password } = req.body;
@@ -78,7 +89,6 @@ const loginAdmin = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
     console.log(user);
-    
 
     // const token = jwt.sign(
     //   { id: admin._id, role: admin.role },
@@ -119,4 +129,9 @@ const loginAdmin = async (req, res) => {
   }
 };
 
-module.exports = { registerSuperAdmin, createInstructor, loginAdmin };
+module.exports = {
+  registerSuperAdmin,
+  createInstructor,
+  loginAdmin,
+  getInstructors,
+};

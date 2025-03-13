@@ -83,9 +83,9 @@ mongoose.connection.on("error", (error) => {
 app.get("/", (req, res, next) => {
   morgan.token(
     "responseMessage",
-    (req, res) => res.locals.message || "Welcome to Warehousing"
+    (req, res) => res.locals.message || "Welcome"
   );
-  res.status(200).send("Welcome to Warehousing");
+  res.status(200).send("Success");
 });
 
 app.get("/test/port", (req, res) => {
@@ -182,5 +182,5 @@ app.use("*", (req, res) => {
 
 server.timeout = 60000; // Set timeout to 1 minutes
 server.listen(port, () => {
-  console.log(`Secure Connection with port ${port}`);
+  console.log(`Secure Connection with port http://localhost:${port}`);
 });
