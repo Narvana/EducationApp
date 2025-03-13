@@ -1,9 +1,8 @@
-// require('dotenv').config({});
+require("dotenv").config();
 
 const mongoose = require("mongoose");
 const uri =
-  process.env.URI ||
-  "mongodb+srv://akashshrestha03:Akash%400304@cluster0.bce8v.mongodb.net/educationApp?retryWrites=true&w=majority";
+  process.env.URI;
 
 // console.log(uri);
 

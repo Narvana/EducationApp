@@ -1,5 +1,5 @@
-require("dotenv").config({ path: "../.env" });
-require('./database/education.mongoDB');
+require("dotenv").config();
+require("./database/education.mongoDB");
 const adminRoutes = require("./routes/adminRoutes");
 
 const express = require("express");
@@ -10,7 +10,7 @@ const mongoose = require("mongoose");
 
 // const port=process.env.PORT;
 
-const port = process.env.PORT || 5000;
+const port = process.env.PORT;
 
 const bodyParser = require("body-parser");
 
