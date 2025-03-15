@@ -46,7 +46,7 @@ const getCourseById = async (req, res) => {
     if (!course) {
       return res
         .status(404)
-        .json({ success: false, message: "Course not found" });
+        .json({ success: false, message: "This course does not exist!" });
     }
     res
       .status(200)
@@ -54,14 +54,6 @@ const getCourseById = async (req, res) => {
   } catch (error) {
     res.status(500).json(ApiErrors(500, { error: error.message }));
   }
-};
-
-// Courses by category id
-
-const byCategoryId = async (req, res) => {
-  try {
-    const courses = await Course.findById(req.params.id);
-  } catch (error) {}
 };
 
 // Update a course by ID
@@ -72,7 +64,9 @@ const updateCourse = async (req, res) => {
       runValidators: true,
     });
     if (!course) {
-      return res.status(404).json({ status: 0, message: "Course not found" });
+      return res
+        .status(404)
+        .json({ status: 0, message: "This course does not exist!" });
     }
     res
       .status(200)
@@ -89,13 +83,13 @@ const deleteCourse = async (req, res) => {
     if (!course) {
       return res
         .status(404)
-        .json({ success: false, message: "Course not found" });
+        .json({ status: 0, message: "This course does not exist!" });
     }
     res
       .status(200)
-      .json({ success: true, message: "Course deleted successfully" });
+      .json({ status: 1, message: "Course has been deleted successfully" });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ status: 0, message: error.message });
   }
 };
 
