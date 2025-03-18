@@ -5,6 +5,7 @@ const Instructor = require("../models/instructor");
 const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 const { uploadToFirebase } = require("../utils/firebase/firebaseConfig");
+const Category = require("../models/category");
 
 // Create a new course
 const createCourse = async (req, res) => {
@@ -12,15 +13,15 @@ const createCourse = async (req, res) => {
   const files = req.files || {};
 
   try {
-    // Validate Instructor ID
-    if (!mongoose.Types.ObjectId.isValid(instructorID)) {
-      return res.status(400).json({ message: "Invalid instructor ID format." });
+    const categoryExists = await Category.findById(CategoryID);
+    if (!categoryExists) {
+      return res.status(404).json(ApiErrors(404, "Category does not exists!"));
     }
 
     // Ensure instructor exists
     const instructor = await Instructor.findById(instructorID);
     if (!instructor) {
-      return res.status(404).json({ message: "Instructor not found!" });
+      return res.status(404).json(ApiErrors(404, "Instructor not found"));
     }
 
     // Upload thumbnail (required)
@@ -28,7 +29,9 @@ const createCourse = async (req, res) => {
     if (files.thumbnail?.[0]) {
       thumbnailURI = await uploadToFirebase(files.thumbnail[0]);
     } else {
-      return res.status(400).json({ message: "Thumbnail image is required." });
+      return res
+        .status(400)
+        .json(ApiErrors(400, "Thumbnail image is required."));
     }
 
     // Create course
@@ -43,9 +46,9 @@ const createCourse = async (req, res) => {
     await course.save();
     return res
       .status(201)
-      .json({ message: "Course created successfully", course });
+      .json(ApiSuccess(201, course, "Course created successfully"));
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json(ApiErrors(500, error.message));
   }
 };
 
@@ -60,10 +63,16 @@ const getCourses = async (req, res) => {
     const courseIDs = courses.map((course) => course._id);
     const videos = await CourseVideo.find({ courseID: { $in: courseIDs } });
 
+    const totalDuration = videos
+      .map((v) => v.duration)
+      .reduce((a, b) => a + b, 0);
+
     // Attach videos to their respective courses
     const coursesWithVideos = courses.map((course) => {
       return {
         ...course.toObject(),
+        videosCount: videos.length,
+        courseDuration: totalDuration,
         videos: videos.filter(
           (video) => video.courseID.toString() === course._id.toString()
         ),
@@ -76,7 +85,7 @@ const getCourses = async (req, res) => {
         ApiSuccess(200, coursesWithVideos, "Courses fetched successfully.")
       );
   } catch (error) {
-    res.status(500).json(ApiErrors(500, { error: error.message }));
+    res.status(500).json(ApiErrors(500, error.message));
   }
 };
 
