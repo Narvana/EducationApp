@@ -1,5 +1,4 @@
 const express = require("express");
-const upload = require("../middleware/ImageUpload/imageUploadMiddleware");
 
 const {
   createCourse,
@@ -24,6 +23,7 @@ const {
   authMiddleware,
   superAdminMiddleware,
 } = require("../middleware/Admin/authMiddleware");
+const upload = require("../middleware/ImageUpload/imageUploadMiddleware");
 
 const router = express.Router();
 
@@ -47,12 +47,13 @@ router.post(
   "/createCategory",
   authMiddleware,
   superAdminMiddleware,
-  // upload.single("image"),
+  upload.single("image"),
   createCategory
 );
 
 router.put(
   "/updateCategory/:id",
+  upload.single("image"),
   authMiddleware,
   superAdminMiddleware,
   updateCategory
@@ -72,6 +73,10 @@ router.delete(
 router.post(
   "/courses/create",
   authMiddleware,
+  upload.fields([
+    { name: "thumbnail", maxCount: 1 }, // Single file
+    { name: "videos", maxCount: 10 }, // Multiple files
+  ]),
   superAdminMiddleware,
   createCourse
 );
@@ -86,6 +91,10 @@ router.get("/courses/get/:id", getCourseById);
 router.put(
   "/courses/update/:id",
   authMiddleware,
+  upload.fields([
+    { name: "thumbnail", maxCount: 1 }, // Single file
+    { name: "videos", maxCount: 10 }, // Multiple files
+  ]),
   superAdminMiddleware,
   updateCourse
 );

@@ -19,18 +19,26 @@ const path=require('path');
 
 const storage = multer.memoryStorage();
 
-const fileFilter=(req,file,cb) =>{
-    if(file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype === 'image/gif'){
-        cb(null,true);
-    }else{
-        cb(new Error("Invalid file type. Only JPEG, PNG, and GIF files are allowed"), false);
-    }
-}
+const fileFilter = (req, file, cb) => {
+  if (
+    file.mimetype.startsWith("image/") || // Accept any image type (jpeg, png, gif, etc.)
+    file.mimetype.startsWith("video/") // Accept any video type (mp4, avi, mov, etc.)
+  ) {
+    cb(null, true);
+  } else {
+    cb(
+      new Error(
+        "Invalid file type. Only images (JPEG, PNG, GIF) and videos (MP4, AVI, MOV) are allowed"
+      ),
+      false
+    );
+  }
+};
 
 const upload=multer({
     storage,
     limits:{
-        fileSize : 1024 * 1024 * 5
+        fileSize : 1024 * 1024 * 20
     }, 
     fileFilter: fileFilter
 })

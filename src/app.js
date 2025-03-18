@@ -3,6 +3,7 @@ require("./database/education.mongoDB");
 const adminRoutes = require("./routes/adminRoutes");
 
 const express = require("express");
+const multer = require("multer");
 
 const app = express();
 
