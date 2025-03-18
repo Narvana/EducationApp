@@ -1,4 +1,6 @@
+const mongoose = require("mongoose");
 const Course = require("../models/courses");
+const CourseVideo = require("../models/CoursesVideos");
 const Instructor = require("../models/instructor");
 const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
@@ -6,45 +8,27 @@ const { uploadToFirebase } = require("../utils/firebase/firebaseConfig");
 
 // Create a new course
 const createCourse = async (req, res) => {
-  const { instructorID, name, description, CategoryID, videos } = req.body;
-  const files = req.files; // Ensure multer is configured to handle multiple files
+  const { instructorID, name, description, CategoryID } = req.body;
+  const files = req.files || {};
 
   try {
-    // Check if course already exists
-    let courseExists = await Course.findOne({ name });
-    if (courseExists) {
-      return res
-        .status(400)
-        .json({ message: "Course with this name already exists." });
+    // Validate Instructor ID
+    if (!mongoose.Types.ObjectId.isValid(instructorID)) {
+      return res.status(400).json({ message: "Invalid instructor ID format." });
     }
 
-    // Upload single thumbnail image
-    let thumbnailURI = "";
-    if (files.thumbnail && files.thumbnail[0]) {
-      thumbnailURI = await uploadToFirebase(files.thumbnail[0]); // Upload first file in 'thumbnail'
-    }
-
-    // Upload multiple video files
-    let videosURI = [];
-    if (files.videos) {
-      await Promise.all(
-        files.videos.map(async (videoFile, index) => {
-          let videoURL = await uploadToFirebase(videoFile);
-          videosURI.push({
-            title: `Video ${index + 1}`, // Assign default title if not provided
-            url: videoURL,
-            duration: 0, // Placeholder; ideally, get duration from metadata
-          });
-        })
-      );
-    }
-
-    // Check if instructor exists
+    // Ensure instructor exists
     const instructor = await Instructor.findById(instructorID);
     if (!instructor) {
-      return res
-        .status(404)
-        .json({ status: 0, message: "Instructor not found!" });
+      return res.status(404).json({ message: "Instructor not found!" });
+    }
+
+    // Upload thumbnail (required)
+    let thumbnailURI = "";
+    if (files.thumbnail?.[0]) {
+      thumbnailURI = await uploadToFirebase(files.thumbnail[0]);
+    } else {
+      return res.status(400).json({ message: "Thumbnail image is required." });
     }
 
     // Create course
@@ -54,28 +38,43 @@ const createCourse = async (req, res) => {
       CategoryID,
       instructorID,
       thumbnail: thumbnailURI,
-      videos: videosURI,
-      videosCount: videosURI.length, // Auto-calculate videos count
     });
 
     await course.save();
-
-    res
+    return res
       .status(201)
-      .json(ApiSuccess(201, course, "Course created successfully"));
+      .json({ message: "Course created successfully", course });
   } catch (error) {
-    res.status(500).json(ApiErrors(500, { error: error.message }));
+    return res.status(500).json({ error: error.message });
   }
 };
 
 // Get all courses
 const getCourses = async (req, res) => {
   try {
-    let courses = await Course.find();
+    let courses = await Course.find()
+      .populate("instructorID", "name")
+      .populate("CategoryID", "name");
+
+    // Fetch videos for each course
+    const courseIDs = courses.map((course) => course._id);
+    const videos = await CourseVideo.find({ courseID: { $in: courseIDs } });
+
+    // Attach videos to their respective courses
+    const coursesWithVideos = courses.map((course) => {
+      return {
+        ...course.toObject(),
+        videos: videos.filter(
+          (video) => video.courseID.toString() === course._id.toString()
+        ),
+      };
+    });
 
     res
       .status(200)
-      .json(ApiSuccess(200, courses, "Courses fetched successfully."));
+      .json(
+        ApiSuccess(200, coursesWithVideos, "Courses fetched successfully.")
+      );
   } catch (error) {
     res.status(500).json(ApiErrors(500, { error: error.message }));
   }
@@ -116,30 +115,11 @@ const updateCourse = async (req, res) => {
       course.thumbnail = await uploadToFirebase(files.thumbnail[0]); // Fix: Use [0] for single file
     }
 
-    // 🔹 Replace videos if new ones are uploaded
-    if (files?.videos && files.videos.length > 0) {
-      let newVideos = [];
-      await Promise.all(
-        files.videos.map(async (video) => {
-          let videoURL = await uploadToFirebase(video);
-          newVideos.push({ title: video.originalname, url: videoURL });
-        })
-      );
-      course.videos = newVideos; // ❌ Remove old videos and replace with new ones
-    }
-
-    // 🔹 Replace YouTube video links if provided in the request body
-    if (videos) {
-      let videoData = JSON.parse(videos); // Convert stringified JSON to object
-      course.videos = videoData; // ❌ Replace old videos with new ones
-    }
-
     // 🔹 Update other course fields
     if (name) course.name = name;
     if (description) course.description = description;
     if (CategoryID) course.CategoryID = CategoryID;
     if (instructorID) course.instructorID = instructorID;
-    course.videosCount = course.videos.length;
 
     await course.save();
 
@@ -151,8 +131,6 @@ const updateCourse = async (req, res) => {
     res.status(400).json({ status: 0, message: error.message });
   }
 };
-
-
 
 // Delete a course by ID
 const deleteCourse = async (req, res) => {

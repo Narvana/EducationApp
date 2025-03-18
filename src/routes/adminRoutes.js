@@ -23,7 +23,15 @@ const {
   authMiddleware,
   superAdminMiddleware,
 } = require("../middleware/Admin/authMiddleware");
+
+const {
+  createVideo,
+  updateVideo,
+  deleteVideo,
+  getVideosByCourseID,
+} = require("../controller/courseVideoController");
 const upload = require("../middleware/ImageUpload/imageUploadMiddleware");
+const { create } = require("../models/CoursesVideos");
 
 const router = express.Router();
 
@@ -69,13 +77,11 @@ router.delete(
 
 // Courses
 
-// Create a new course
 router.post(
   "/courses/create",
   authMiddleware,
   upload.fields([
-    { name: "thumbnail", maxCount: 1 }, // Single file
-    { name: "videos", maxCount: 10 }, // Multiple files
+    { name: "thumbnail", maxCount: 1 }, // Single file // Multiple files
   ]),
   superAdminMiddleware,
   createCourse
@@ -106,5 +112,31 @@ router.delete(
   superAdminMiddleware,
   deleteCourse
 );
+
+// Course Videos
+
+router.post(
+  "/courses/videos/add",
+  authMiddleware,
+  upload.single("video"),
+  superAdminMiddleware,
+  createVideo
+);
+
+router.put(
+  "/courses/videos/update/:id",
+  authMiddleware,
+  upload.single("video"),
+  superAdminMiddleware,
+  updateVideo
+);
+
+router.delete(
+  "/courses/videos/delete/:id", authMiddleware,
+  superAdminMiddleware,
+  deleteVideo
+);
+
+router.get("/courses/videos/:courseID", getVideosByCourseID);
 
 module.exports = router;

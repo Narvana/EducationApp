@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const { fetchCourseDetails } = require("../middleware/CourseDetails/CourseDetails");
 
 const { Schema } = mongoose;
 
@@ -20,26 +19,20 @@ const CourseSchema = new Schema({
     maxlength: 400,
   },
   CategoryID: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
     required: true,
-  },
-  categoryName: {
-    type: String,
-    required: false,
+    ref: "Category", // Ensure Category model exists
   },
   instructorID: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
     required: true,
-  },
-  instructorName: {
-    type: String,
-    required: false,
+    ref: "Instructor",
   },
   videos: [
     {
-      title: { type: String, required: true, maxlength: 200 },
-      url: { type: String, required: true },
-      duration: { type: Number, required: false },
+      title: { type: String, required: false, maxlength: 200, default: null },
+      url: { type: String, required: false, default: null },
+      duration: { type: Number, default: 0 },
     },
   ],
   videosCount: {
@@ -49,8 +42,8 @@ const CourseSchema = new Schema({
   },
 });
 
-// Use Middleware
-CourseSchema.pre("save", fetchCourseDetails);
+// Remove middleware if unnecessary
+// CourseSchema.pre("save", fetchCourseDetails);
 
 const Course = mongoose.model("Course", CourseSchema);
 

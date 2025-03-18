@@ -2,7 +2,7 @@
 const admin = require("firebase-admin");
 const { Buffer } = require("buffer");
 const path = require("path");
-const serviceAccount = require("../../education-1f161-firebase-adminsdk-fbsvc-0f8ce69501.json");
+const serviceAccount = require("../../../education-1f161-firebase-adminsdk-fbsvc-0f8ce69501.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
