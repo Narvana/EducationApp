@@ -55,7 +55,7 @@ app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 
 // Routes
 
-app.use("/api/admin", adminRoutes);
+
 
 // Security
 app.use(
@@ -66,6 +66,8 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+app.use("/api/admin", adminRoutes);
 
 app.use(
   helmet({
