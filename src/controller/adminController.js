@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const generateAccessToken = require("../utils/token/generateAccessToken");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
+const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 
 // Register Super Admin (Only for first-time setup)
 const registerSuperAdmin = async (req, res) => {
@@ -81,8 +82,7 @@ const loginAdmin = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user =
-      (await Admin.findOne({ email })) || (await Instructor.findOne({ email }));
+    const user = await Admin.findOne({ email });
 
     if (!user) return res.status(400).json({ msg: "Invalid credentials" });
 
@@ -90,42 +90,20 @@ const loginAdmin = async (req, res) => {
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
     console.log(user);
 
-    // const token = jwt.sign(
-    //   { id: admin._id, role: admin.role },
-    //   process.env.JWT_SECRET || "jwtSecret",
-    //   {
-    //     expiresIn: "1d",
-    //   }
-    // );
-
     const token = await generateAccessToken(user._id);
-    if (user.role === "superadmin") {
-      res.json({
-        status: 1,
+    console.log(user.role);
 
-        token,
-        user: {
-          id: user._id,
-          email: user.email,
-          role: user.role,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-        },
-      });
-    } else {
-      res.json({
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          contact: user.contact,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-        },
-      });
-    }
+    res.status(200).json({
+      status: 1,
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
