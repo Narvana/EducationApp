@@ -60,7 +60,7 @@ app.use("/api/admin", adminRoutes);
 // Security
 app.use(
   cors({
-    origin: true, // Reflects the request origin
+    origin: ["http://localhost:5173", "http://localhost:5179"], // Reflects the request origin
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
