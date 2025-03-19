@@ -55,12 +55,14 @@ app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 
 // Routes
 
-
-
 // Security
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5179"], // Reflects the request origin
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5179",
+      "https://educationadminpanel.netlify.app",
+    ], // Reflects the request origin
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
