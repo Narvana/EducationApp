@@ -101,6 +101,8 @@ const loginAdmin = async (req, res) => {
     const token = await generateAccessToken(user._id);
     if (user.role === "superadmin") {
       res.json({
+        status: 1,
+
         token,
         user: {
           id: user._id,
