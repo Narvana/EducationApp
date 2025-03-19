@@ -60,7 +60,7 @@ app.use("/api/admin", adminRoutes);
 // Security
 app.use(
   cors({
-    origin: ["*"],
+    origin: "*", // Allows all origins
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
