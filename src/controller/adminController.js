@@ -40,16 +40,19 @@ const createInstructor = async (req, res) => {
       .json({ msg: "Access Denied! Only Super Admin can create instructors." });
   }
 
-  const { name, email, password, contact, idProof, role } = req.body;
+  const { name, email, password, contact, idProof } = req.body;
 
   try {
     let instructorExists = await Instructor.findOne({ email });
     if (instructorExists)
       return res.status(400).json({ msg: "Instructor already exists" });
 
-     if (!password) {
-      res.status(400).json({message: "Password is required"})
-     }
+    console.log("Received password:", password);
+
+    if (!password) {
+      return res.status(400).json({ message: "Password is required" }); // 🛑 Add `return` to stop execution
+    }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -57,17 +60,18 @@ const createInstructor = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: "teacher", // Corrected to match defined roles
+      role: "instructor", // Corrected to match defined roles
       contact: Number(contact),
       idProof,
     });
 
     await instructor.save();
-    res.status(201).json({ msg: "Instructor created successfully" });
+    return res.status(201).json({ msg: "Instructor created successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
+
 
 const getInstructors = async (req, res) => {
   try {
