@@ -47,7 +47,7 @@ const createInstructor = async (req, res) => {
     if (instructorExists)
       return res.status(400).json({ msg: "Instructor already exists" });
 
-    console.log("Received password:", password);
+    console.log("Received password:", req.body);
 
     if (!password) {
       return res.status(400).json({ message: "Password is required" }); // 🛑 Add `return` to stop execution
@@ -71,7 +71,6 @@ const createInstructor = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
-
 
 const getInstructors = async (req, res) => {
   try {
