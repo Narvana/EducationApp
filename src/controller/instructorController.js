@@ -44,7 +44,7 @@ const getInstructor = async (req, res) => {
   }
 };
 
-const deleteInstructure = async (req, res) => {
+const deleteInstructor = async (req, res) => {
   try {
     const instructor = await findByIdAndDelete(req.params.id);
     if (!instructor) {
@@ -61,4 +61,4 @@ const deleteInstructure = async (req, res) => {
   }
 };
 
-module.exports = { getInstructor, deleteInstructure, updateInstructor };
+module.exports = { getInstructor, deleteInstructor, updateInstructor };

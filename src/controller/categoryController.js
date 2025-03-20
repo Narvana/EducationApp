@@ -28,7 +28,9 @@ const createCategory = async (req, res) => {
     });
 
     await category.save();
-    res.status(201).json({ msg: "Category created successfully", category });
+    res
+      .status(201)
+      .json(ApiSuccess(201, category, "Category created successfully"));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -38,7 +40,6 @@ const createCategory = async (req, res) => {
 const getCategories = async (req, res) => {
   try {
     const categories = await Category.find();
-
 
     res
       .status(200)
@@ -52,7 +53,9 @@ const getCategories = async (req, res) => {
 const deleteCategory = async (req, res) => {
   try {
     await Category.findByIdAndDelete(req.params.id);
-    res.status(200).json({ msg: "Category deleted successfully" });
+    res
+      .status(200)
+      .json({ status: 1, message: "Category deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

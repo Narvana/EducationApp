@@ -31,7 +31,6 @@ const generateAccessToken = async (id, req, res) => {
       }
     );
 
-    console.log(accessToken);
 
     return accessToken;
   } catch (error) {

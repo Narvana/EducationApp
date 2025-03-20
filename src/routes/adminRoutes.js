@@ -37,6 +37,10 @@ const {
   createStudent,
   deleteStudent,
 } = require("../controller/studentController");
+const {
+  updateInstructor,
+  deleteInstructor,
+} = require("../controller/instructorController");
 
 const router = express.Router();
 
@@ -54,6 +58,20 @@ router.post(
 );
 
 router.get("/instructors", getInstructors);
+
+router.put(
+  "/instructors/update/:id",
+  authMiddleware,
+  superAdminMiddleware,
+  updateInstructor
+);
+
+router.delete(
+  "/instructors/delete/:id",
+  authMiddleware,
+  superAdminMiddleware,
+  deleteInstructor
+);
 
 // Categories
 router.post(
