@@ -24,7 +24,8 @@ const generateAccessToken = async (id, req, res) => {
         name: user.name,
         email: user.email,
       },
-      process.env.JWT_SECRET,
+      // process.env.JWT_SECRET,
+      "xQJslU3ieVjhYt0xCUu8hhUGayx265KgfP4W0abHhvfJJA8xFO8cYVChPGhjz0JT4w1GP3vURXdXBk8jC2Hu4W49jz",
       {
         expiresIn: "1d",
       }
