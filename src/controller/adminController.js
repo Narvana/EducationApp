@@ -88,10 +88,8 @@ const loginAdmin = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
-    console.log(user);
 
     const token = await generateAccessToken(user._id);
-    console.log(user.role);
 
     res.status(200).json({
       status: 1,
@@ -105,7 +103,7 @@ const loginAdmin = async (req, res) => {
       },
     });
   } catch (error) {
-     res.status(500).json(ApiErrors(500, error.message));
+    res.status(500).json(ApiErrors(500, error.message));
   }
 };
 

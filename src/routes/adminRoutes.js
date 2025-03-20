@@ -31,7 +31,12 @@ const {
   getVideosByCourseID,
 } = require("../controller/courseVideoController");
 const upload = require("../middleware/ImageUpload/imageUploadMiddleware");
-const { create } = require("../models/CoursesVideos");
+const {
+  getStudent,
+  updateStudent,
+  createStudent,
+  deleteStudent,
+} = require("../controller/studentController");
 
 const router = express.Router();
 
@@ -132,11 +137,34 @@ router.put(
 );
 
 router.delete(
-  "/courses/videos/delete/:id", authMiddleware,
+  "/courses/videos/delete/:id",
+  authMiddleware,
   superAdminMiddleware,
   deleteVideo
 );
 
 router.get("/courses/videos/:courseID", getVideosByCourseID);
+
+// Students
+
+router.get("/students", getStudent);
+router.post(
+  "/students/create",
+  createStudent,
+  authMiddleware,
+  superAdminMiddleware
+);
+router.put(
+  "/students/update/:id",
+  updateStudent,
+  authMiddleware,
+  superAdminMiddleware
+);
+router.delete(
+  "/students/delete/:id",
+  deleteStudent,
+  authMiddleware,
+  superAdminMiddleware
+);
 
 module.exports = router;

@@ -40,7 +40,7 @@ const getInstructor = async (req, res) => {
       .status(200)
       .json(ApiSuccess(200, instructor, "Instructor fetched successfully."));
   } catch (error) {
-    res.status(500).json(ApiErrors(500, { error: error.message }));
+    res.status(500).json(ApiErrors(500, error.message ));
   }
 };
 
@@ -56,7 +56,9 @@ const deleteInstructure = async (req, res) => {
     res
       .status(200)
       .json({ status: 1, message: "Instructor deleted successfully." });
-  } catch (error) {}
+  } catch (error) {
+    res.status(500).json(ApiErrors(500, error.message));
+  }
 };
 
 module.exports = { getInstructor, deleteInstructure, updateInstructor };

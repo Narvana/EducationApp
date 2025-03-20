@@ -1,6 +1,7 @@
 require("dotenv").config();
 require("./database/education.mongoDB");
 const adminRoutes = require("./routes/adminRoutes");
+const studentRoutes = require("./routes/studentRoutes");
 
 const express = require("express");
 const multer = require("multer");
@@ -9,7 +10,7 @@ const app = express();
 
 const mongoose = require("mongoose");
 
-// const port=process.env.PORT;
+
 
 const port = process.env.PORT;
 
@@ -58,11 +59,7 @@ app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 // Security
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5179",
-      "https://educationadminpanel.netlify.app",
-    ], // Reflects the request origin
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -70,6 +67,7 @@ app.use(
 );
 
 app.use("/api/admin", adminRoutes);
+app.use("/api/student", studentRoutes);
 
 app.use(
   helmet({
