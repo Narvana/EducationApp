@@ -47,6 +47,9 @@ const createInstructor = async (req, res) => {
     if (instructorExists)
       return res.status(400).json({ msg: "Instructor already exists" });
 
+     if (!password) {
+      res.status(400).json({message: "Password is required"})
+     }
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -55,7 +58,7 @@ const createInstructor = async (req, res) => {
       email,
       password: hashedPassword,
       role: "teacher", // Corrected to match defined roles
-      contact,
+      contact: Number(contact),
       idProof,
     });
 
