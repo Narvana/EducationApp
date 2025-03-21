@@ -67,7 +67,7 @@ app.use(
 );
 
 app.use("/api/admin", adminRoutes);
-app.use("/api/student", studentRoutes);
+app.use("/api/client", studentRoutes);
 
 app.use(
   helmet({

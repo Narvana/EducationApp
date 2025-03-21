@@ -14,6 +14,14 @@ const InstructorSchema = new Schema(
       lowercase: true,
       trim: true,
     },
+    occuapation: {
+      type: String,
+      required: true,
+    },
+    image: {
+      type: String,
+      required: true,
+    },
     password: {
       type: String,
       required: true,

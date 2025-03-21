@@ -5,6 +5,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const generateAccessToken = require("../utils/token/generateAccessToken");
 
+// Create Student
+
 const createStudent = async (req, res) => {
   const { name, email, password, contact } = req.body;
   try {
@@ -42,6 +44,8 @@ const createStudent = async (req, res) => {
   }
 };
 
+// Student Login
+
 const studentLogin = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -75,6 +79,8 @@ const studentLogin = async (req, res) => {
   }
 };
 
+// Get Students
+
 const getStudent = async (req, res) => {
   try {
     const student = await Student.find();
@@ -85,6 +91,8 @@ const getStudent = async (req, res) => {
     res.status(500).json(ApiErrors(500, { error: error.message }));
   }
 };
+
+// Update Student
 
 const updateStudent = async (req, res) => {
   try {
@@ -110,6 +118,8 @@ const updateStudent = async (req, res) => {
     res.status(500).json(ApiErrors(500, error.message));
   }
 };
+
+// Delete Student
 
 const deleteStudent = async (req, res) => {
   try {

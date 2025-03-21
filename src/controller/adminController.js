@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const generateAccessToken = require("../utils/token/generateAccessToken");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 const ApiErrors = require("../utils/ApiResponse/ApiErrors");
+const { uploadToFirebase } = require("../utils/firebase/firebaseConfig");
 
 // Register Super Admin (Only for first-time setup)
 const registerSuperAdmin = async (req, res) => {
@@ -42,6 +43,8 @@ const createInstructor = async (req, res) => {
 
   const { name, email, password, contact, idProof } = req.body;
 
+  const file = req.file;
+
   try {
     let instructorExists = await Instructor.findOne({ email });
     if (instructorExists)
@@ -54,6 +57,15 @@ const createInstructor = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    let teacherImage = "";
+    if (file.image) {
+      teacherImage = await uploadToFirebase(file.image[0]);
+    } else {
+      return res
+        .status(400)
+        .json(ApiErrors(400, "Teacher's image is required"));
+    }
+
     const instructor = new Instructor({
       name,
       email,
@@ -61,6 +73,7 @@ const createInstructor = async (req, res) => {
       role: "instructor", // Corrected to match defined roles
       contact: Number(contact),
       idProof,
+      image: teacherImage,
     });
 
     await instructor.save();

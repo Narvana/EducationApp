@@ -106,10 +106,31 @@ const getCourseById = async (req, res) => {
   }
 };
 
+// Get courses by Catgeory ID
+
+const getCoursesByCategoryID = async (req, res) => {
+  try {
+    const courses = await Course.find({
+      CategoryID: { _id: req.params.id },
+    });
+    if (!courses) {
+      return res
+        .status(404)
+        .json(
+          ApiErrors(404, "There are no courses available in this category")
+        );
+    }
+
+    res.status(200).json(ApiSuccess(200, courses, "Courses fetched"));
+  } catch (error) {
+     res.status(500).json(ApiErrors(500, { error: error.message }));
+  }
+};
+
 // Update a course by ID
 const updateCourse = async (req, res) => {
   try {
-    const { name, description, CategoryID, instructorID, videos } = req.body;
+    const { name, description, CategoryID, instructorID } = req.body;
     const files = req.files; // Get uploaded files
 
     const course = await Course.findById(req.params.id);
@@ -164,4 +185,5 @@ module.exports = {
   getCourseById,
   getCourses,
   deleteCourse,
+  getCoursesByCategoryID,
 };

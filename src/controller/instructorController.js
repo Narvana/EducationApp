@@ -1,15 +1,30 @@
 const Instructor = require("../models/instructor");
 const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
+const { uploadToFirebase } = require("../utils/firebase/firebaseConfig");
 
 const updateInstructor = async (req, res) => {
+  const { name, email, password, contact, idProof } = req.body;
+  const file = req.file;
   try {
+    const instructorExists = await Instructor.findById(req.params.id);
+
+    if (!instructorExists) {
+      return res
+        .status(404)
+        .json({ status: 0, message: "Instructor not found!" });
+    }
+
+    const imageLink = instructorExists.image;
+    if (file) {
+      imageLink = await uploadToFirebase(file);
+    }
+
     const instructor = await Instructor.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      { name, email, password, contact, idProof, image: imageLink },
       {
         new: true,
-        runValidators: true,
       }
     );
 
@@ -29,7 +44,7 @@ const updateInstructor = async (req, res) => {
         )
       );
   } catch (error) {
-    res.status(400).json({ status: 0, message: error.message });
+    res.status(500).json(ApiErrors(500, error.message));
   }
 };
 
@@ -40,7 +55,7 @@ const getInstructor = async (req, res) => {
       .status(200)
       .json(ApiSuccess(200, instructor, "Instructor fetched successfully."));
   } catch (error) {
-    res.status(500).json(ApiErrors(500, error.message ));
+    res.status(500).json(ApiErrors(500, error.message));
   }
 };
 
