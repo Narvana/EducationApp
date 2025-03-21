@@ -46,7 +46,7 @@ const getInstructor = async (req, res) => {
 
 const deleteInstructor = async (req, res) => {
   try {
-    const instructor = await findByIdAndDelete(req.params.id);
+    const instructor = await Instructor.findByIdAndDelete(req.params.id);
     if (!instructor) {
       return res
         .status(404)
