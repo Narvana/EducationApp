@@ -23,7 +23,7 @@ const createStudent = async (req, res) => {
       email,
       password: hashedPassword,
       role: "student",
-      contact,
+      contact: Number(contact),
     });
 
     await student.save();
