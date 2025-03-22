@@ -29,21 +29,25 @@ const CourseSchema = new Schema(
       required: true,
       ref: "Instructor",
     },
-    videos: [
+    media: [
       {
         title: { type: String, required: false, maxlength: 200, default: null },
         url: { type: String, required: false, default: null },
         duration: { type: Number, default: 0 },
       },
     ],
-    videosCount: {
+    mediaCount: {
       type: Number,
       default: 0,
       max: 20,
     },
     rating: {
       type: Number,
-      default: 0,
+      default: 0, // Average rating
+    },
+    ratingCount: {
+      type: Number,
+      default: 0, // Number of ratings
     },
     courseDuration: {
       type: Number,
@@ -52,9 +56,6 @@ const CourseSchema = new Schema(
   },
   { timestamps: true }
 );
-
-// Remove middleware if unnecessary
-// CourseSchema.pre("save", fetchCourseDetails);
 
 const Course = mongoose.model("Course", CourseSchema);
 

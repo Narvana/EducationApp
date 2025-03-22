@@ -7,8 +7,7 @@ const { uploadToFirebase } = require("../utils/firebase/firebaseConfig");
 // Create a new course video
 const createVideo = async (req, res) => {
   try {
-    console.log("Request received:", req.body);
-    console.log("Uploaded file:", req.file);
+   
 
     const { courseID, title, duration } = req.body;
     const file = req.file;

@@ -89,7 +89,7 @@ const getCourses = async (req, res) => {
         ApiSuccess(200, coursesWithVideos, "Courses fetched successfully.")
       );
   } catch (error) {
-    res.status(500).json(ApiErrors(500, error.message));
+    return res.status(500).json(ApiErrors(500, error.message));
   }
 };
 
@@ -100,13 +100,13 @@ const getCourseById = async (req, res) => {
     if (!course) {
       return res
         .status(404)
-        .json({ success: false, message: "This course does not exist!" });
+        .json(ApiErrors(404, "This course does not exist!"));
     }
-    res
+    return res
       .status(200)
       .json(ApiSuccess(200, course, "Course fetched successfully."));
   } catch (error) {
-    res.status(500).json(ApiErrors(500, { error: error.message }));
+    return res.status(500).json(ApiErrors(500, error.message));
   }
 };
 
@@ -125,9 +125,11 @@ const getCoursesByCategoryID = async (req, res) => {
         );
     }
 
-    res.status(200).json(ApiSuccess(200, courses, "Courses fetched"));
+    return res
+      .status(200)
+      .json(ApiSuccess(200, courses, "Courses fetched successfully"));
   } catch (error) {
-    res.status(500).json(ApiErrors(500, { error: error.message }));
+    return res.status(500).json(ApiErrors(500, error.message));
   }
 };
 
@@ -141,7 +143,7 @@ const updateCourse = async (req, res) => {
     if (!course) {
       return res
         .status(404)
-        .json({ status: 0, message: "This course does not exist!" });
+        .json(ApiErrors(404, "This course does not exist!"));
     }
 
     // 🔹 Check if thumbnail is uploaded and update it
@@ -161,8 +163,7 @@ const updateCourse = async (req, res) => {
       .status(200)
       .json(ApiSuccess(200, course, "Course updated successfully."));
   } catch (error) {
-    console.error(error); // 🔹 Log the error for debugging
-    res.status(400).json({ status: 0, message: error.message });
+    res.status(400).json(ApiErrors(500, error.message));
   }
 };
 
@@ -173,13 +174,13 @@ const deleteCourse = async (req, res) => {
     if (!course) {
       return res
         .status(404)
-        .json({ status: 0, message: "This course does not exist!" });
+        .json(ApiErrors(404, "This course does not exist!"));
     }
     res
       .status(200)
       .json({ status: 1, message: "Course has been deleted successfully" });
   } catch (error) {
-    res.status(500).json({ status: 0, message: error.message });
+    res.status(500).json(ApiErrors(500, error.message));
   }
 };
 
