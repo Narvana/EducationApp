@@ -53,6 +53,7 @@ router.post("/login", loginAdmin);
 router.post(
   "/create-instructor",
   authMiddleware,
+  upload.single("image"),
   superAdminMiddleware,
   createInstructor
 );
@@ -62,6 +63,7 @@ router.get("/instructors", getInstructors);
 router.put(
   "/instructors/update/:id",
   authMiddleware,
+  upload.single("image"),
   superAdminMiddleware,
   updateInstructor
 );
@@ -122,7 +124,6 @@ router.put(
   authMiddleware,
   upload.fields([
     { name: "thumbnail", maxCount: 1 }, // Single file
-    { name: "videos", maxCount: 10 }, // Multiple files
   ]),
   superAdminMiddleware,
   updateCourse

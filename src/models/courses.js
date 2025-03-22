@@ -22,7 +22,7 @@ const CourseSchema = new Schema(
     CategoryID: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref: "Category", 
+      ref: "Category",
     },
     instructorID: {
       type: mongoose.Schema.Types.ObjectId,
@@ -41,10 +41,14 @@ const CourseSchema = new Schema(
       default: 0,
       max: 20,
     },
+    rating: {
+      type: Number,
+      default: 0,
+    },
     courseDuration: {
       type: Number,
       default: 0,
-    }
+    },
   },
   { timestamps: true }
 );

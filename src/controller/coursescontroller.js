@@ -55,27 +55,31 @@ const createCourse = async (req, res) => {
 // Get all courses
 const getCourses = async (req, res) => {
   try {
-    let courses = await Course.find()
-      .populate("instructorID", "name")
-      .populate("CategoryID", "name");
+    let courses = await Course.find();
 
     // Fetch videos for each course
     const courseIDs = courses.map((course) => course._id);
     const videos = await CourseVideo.find({ courseID: { $in: courseIDs } });
+    console.log("Videos from database", videos);
 
-    const totalDuration = videos
-      .map((v) => v.duration)
-      .reduce((a, b) => a + b, 0);
+    const totalDuration = (course) =>
+      videos
+        .filter((video) => video.courseID.toString() === course._id.toString())
+        .map((v) => v.duration)
+        .reduce((a, b) => a + b, 0);
+
+    const filteredVideos = (course) =>
+      videos.filter(
+        (video) => video.courseID.toString() === course._id.toString()
+      );
 
     // Attach videos to their respective courses
     const coursesWithVideos = courses.map((course) => {
       return {
         ...course.toObject(),
-        videosCount: videos.length,
-        courseDuration: totalDuration,
-        videos: videos.filter(
-          (video) => video.courseID.toString() === course._id.toString()
-        ),
+        videosCount: filteredVideos(course).length,
+        courseDuration: totalDuration(course),
+        videos: filteredVideos(course),
       };
     });
 
@@ -123,7 +127,7 @@ const getCoursesByCategoryID = async (req, res) => {
 
     res.status(200).json(ApiSuccess(200, courses, "Courses fetched"));
   } catch (error) {
-     res.status(500).json(ApiErrors(500, { error: error.message }));
+    res.status(500).json(ApiErrors(500, { error: error.message }));
   }
 };
 

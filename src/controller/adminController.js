@@ -35,31 +35,29 @@ const registerSuperAdmin = async (req, res) => {
 
 // Super Admin Creates Instructor
 const createInstructor = async (req, res) => {
-  if (!req.admin || req.admin.role !== "superadmin") {
-    return res
-      .status(403)
-      .json({ msg: "Access Denied! Only Super Admin can create instructors." });
-  }
-
-  const { name, email, password, contact, idProof } = req.body;
+  const { name, email, password, contact, idProof, occupation } = req.body;
 
   const file = req.file;
+
+  console.log(file, "Received image");
+  
 
   try {
     let instructorExists = await Instructor.findOne({ email });
     if (instructorExists)
-      return res.status(400).json({ msg: "Instructor already exists" });
-
-    if (!password) {
-      return res.status(400).json({ message: "Password is required" });
-    }
+      return res.status(400).json(ApiErrors(400, "Instructor already exists"));
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    console.log(file);
+    
+
     let teacherImage = "";
-    if (file.image) {
-      teacherImage = await uploadToFirebase(file.image[0]);
+    if (file) {
+      teacherImage = await uploadToFirebase(file);
+      console.log(teacherImage);
+      
     } else {
       return res
         .status(400)
@@ -73,20 +71,23 @@ const createInstructor = async (req, res) => {
       role: "instructor", // Corrected to match defined roles
       contact: Number(contact),
       idProof,
+      occupation,
       image: teacherImage,
     });
 
     await instructor.save();
-    return res.status(201).json({ msg: "Instructor created successfully" });
+    return res
+      .status(201)
+      .json(ApiSuccess(201, instructor, "Instructor created successfully"));
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    res.status(500).json(ApiErrors(500, { error: error.message }));
   }
 };
 
 const getInstructors = async (req, res) => {
   try {
     const instructors = await Instructor.find();
-    res
+    return res
       .status(200)
       .json(ApiSuccess(200, instructors, "Instructors fetched successfully!"));
   } catch (error) {

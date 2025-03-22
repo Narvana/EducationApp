@@ -14,7 +14,7 @@ const InstructorSchema = new Schema(
       lowercase: true,
       trim: true,
     },
-    occuapation: {
+    occupation: {
       type: String,
       required: true,
     },
