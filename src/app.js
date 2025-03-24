@@ -10,8 +10,6 @@ const app = express();
 
 const mongoose = require("mongoose");
 
-
-
 const port = process.env.PORT;
 
 const bodyParser = require("body-parser");
@@ -128,7 +126,7 @@ app.use((err, req, res, next) => {
     if (err.code === "LIMIT_FILE_SIZE") {
       morgan.token(
         "responseMessage",
-        (req, res) => res.locals.message || `${err.message}, max limit is 5MB`
+        (req, res) => res.locals.message || `${err.message}, max limit is 20MB`
       );
       return res.status(413).json({
         status: 0,

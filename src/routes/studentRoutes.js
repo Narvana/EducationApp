@@ -13,6 +13,8 @@ const router = express.Router();
 // Login
 router.post("/login", studentLogin);
 
+// Courses and Categories
+
 router.get("/categories/get", getCategories);
 
 router.get("/courses/categoryid=:id", getCoursesByCategoryID);

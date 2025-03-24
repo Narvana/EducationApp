@@ -16,11 +16,18 @@ const CourseVideos = new Schema(
       type: String,
       required: true,
     },
-    duration: {
-      type: Number,
+    mediaType: {
+      type: String,
+      enum: ["video", "audio", "pdf"],
       required: true,
     },
-    video: {
+    duration: {
+      type: Number,
+      required: function () {
+        return this.mediaType !== "pdf"; // Required only if not a PDF
+      },
+    },
+    media: {
       type: String,
       required: true,
     },

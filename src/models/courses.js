@@ -29,14 +29,14 @@ const CourseSchema = new Schema(
       required: true,
       ref: "Instructor",
     },
-    videos: [
-      {
-        title: { type: String, required: false, maxlength: 200, default: null },
-        url: { type: String, required: false, default: null },
-        duration: { type: Number, default: 0 },
-      },
+    media_files: [
+      // {
+      //   title: { type: String, required: false, maxlength: 200, default: null },
+      //   url: { type: String, required: false, default: null },
+      //   duration: { type: Number, default: 0 },
+      // },
     ],
-    videosCount: {
+    mediaCount: {
       type: Number,
       default: 0,
       max: 20,

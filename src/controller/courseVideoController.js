@@ -7,9 +7,7 @@ const { uploadToFirebase } = require("../utils/firebase/firebaseConfig");
 // Create a new course video
 const createVideo = async (req, res) => {
   try {
-   
-
-    const { courseID, title, duration } = req.body;
+    const { courseID, title, mediaType, duration } = req.body;
     const file = req.file;
 
     // Validate course existence
@@ -18,24 +16,32 @@ const createVideo = async (req, res) => {
       return res.status(404).json(ApiErrors(404, "Course not found!"));
     }
 
-    let videoLink = "";
-    if (file) {
-      videoLink = await uploadToFirebase(file);
+    if (mediaType !== "pdf" && !duration) {
+      return res
+        .status(400)
+        .json({ message: "Duration is required for videos and audio files" });
     }
 
-    const newVideo = new CourseVideo({
+    let mediaLink = "";
+    if (file) {
+      mediaLink = await uploadToFirebase(file);
+    }
+
+    const newMedia = new CourseVideo({
       courseID,
       courseName: course.name,
       title,
+      mediaType,
       duration,
-      video: videoLink,
+      duration: mediaType !== "pdf" ? duration : 0,
+      media: mediaLink,
     });
 
-    await newVideo.save();
+    await newMedia.save();
 
     res
       .status(201)
-      .json(ApiSuccess(201, newVideo, "Video added successfully!"));
+      .json(ApiSuccess(201, newMedia, "Media added successfully!"));
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json(ApiErrors(500, error.message));
@@ -46,7 +52,7 @@ const createVideo = async (req, res) => {
 const updateVideo = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, duration } = req.body;
+    const { title, duration, mediaType } = req.body;
     const file = req.file; // Get uploaded file
 
     // Find the existing video
@@ -57,21 +63,21 @@ const updateVideo = async (req, res) => {
         .json(ApiErrors(404, "No video found with this id"));
     }
 
-    let videoLink = existingVideo.video; // Keep the old video if no new file is uploaded
+    let mediaLink = existingVideo.video; // Keep the old video if no new file is uploaded
 
     if (file) {
-      videoLink = await uploadToFirebase(file); // Upload new video
+      mediaLink = await uploadToFirebase(file); // Upload new video
     }
 
-    const updatedVideo = await CourseVideo.findByIdAndUpdate(
+    const updatedMedia = await CourseVideo.findByIdAndUpdate(
       id,
-      { title, duration, video: videoLink },
+      { title, duration: mediaType !== "pdf" ? duration : 0, mediaType, media: mediaLink },
       { new: true }
     );
 
     res
       .status(200)
-      .json(ApiSuccess(200, updatedVideo, "Updated successfully!"));
+      .json(ApiSuccess(200, updatedMedia, "Updated successfully!"));
   } catch (error) {
     res.status(500).json(ApiErrors(500, error.message));
   }
@@ -81,16 +87,16 @@ const updateVideo = async (req, res) => {
 const deleteVideo = async (req, res) => {
   try {
     const { id } = req.params;
-    const video = await CourseVideo.findByIdAndDelete(id);
+    const media = await CourseVideo.findByIdAndDelete(id);
 
-    if (!video) {
-      return res.status(404).json({ message: "Video not found" });
+    if (!media) {
+      return res.status(404).json({ message: "Media not found" });
     }
 
     // Update course video count
-    const course = await Course.findById(video.courseID);
+    const course = await Course.findById(media.courseID);
     if (course) {
-      course.videosCount = Math.max(0, course.videosCount - 1);
+      course.mediaCount = Math.max(0, course.mediaCount - 1);
       await course.save();
     }
 

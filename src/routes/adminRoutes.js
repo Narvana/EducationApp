@@ -116,7 +116,7 @@ router.post(
 router.get("/courses/get", getCourses);
 
 // Get a single course by ID
-router.get("/courses/get/:id", getCourseById);
+router.get("/courses/get", getCourseById);
 
 // Update a course by ID
 router.put(
@@ -142,7 +142,7 @@ router.delete(
 router.post(
   "/courses/videos/add",
   authMiddleware,
-  upload.single("video"),
+  upload.single("media"),
   superAdminMiddleware,
   createVideo
 );
@@ -150,7 +150,7 @@ router.post(
 router.put(
   "/courses/videos/update/:id",
   authMiddleware,
-  upload.single("video"),
+  upload.single("media"),
   superAdminMiddleware,
   updateVideo
 );

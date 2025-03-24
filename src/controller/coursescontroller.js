@@ -18,6 +18,14 @@ const createCourse = async (req, res) => {
       return res.status(404).json(ApiErrors(404, "Category does not exists!"));
     }
 
+    const courseExists = await Course.findOne({ name });
+
+    if (courseExists) {
+      return res
+        .status(400)
+        .json(ApiErrors(400, "Course with this name already exists."));
+    }
+
     // Ensure instructor exists
     const instructor = await Instructor.findById(instructorID);
     if (!instructor) {
@@ -77,9 +85,9 @@ const getCourses = async (req, res) => {
     const coursesWithVideos = courses.map((course) => {
       return {
         ...course.toObject(),
-        videosCount: filteredVideos(course).length,
+        mediaCount: filteredVideos(course).length,
         courseDuration: totalDuration(course),
-        videos: filteredVideos(course),
+        media_files: filteredVideos(course),
       };
     });
 
@@ -95,16 +103,29 @@ const getCourses = async (req, res) => {
 
 // Get a single course by ID
 const getCourseById = async (req, res) => {
+  const { courseID } = req.params;
   try {
-    const course = await Course.findById(req.params.id);
-    if (!course) {
-      return res
-        .status(404)
-        .json(ApiErrors(404, "This course does not exist!"));
-    }
-    return res
+    const course = await Course.findById(courseID);
+
+    const videos = await CourseVideo.find({ courseID });
+    console.log("Videos from database", videos);
+
+    const totalDuration = () =>
+      videos?.map((v) => v.duration).reduce((a, b) => a + b, 0);
+
+    // Attach videos to their respective courses
+    const coursesWithVideos = {
+      ...course?.toObject(),
+      mediaCount: videos?.length,
+      courseDuration: totalDuration(),
+      media_files: videos,
+    };
+
+    res
       .status(200)
-      .json(ApiSuccess(200, course, "Course fetched successfully."));
+      .json(
+        ApiSuccess(200, coursesWithVideos, "Courses fetched successfully.")
+      );
   } catch (error) {
     return res.status(500).json(ApiErrors(500, error.message));
   }
@@ -116,7 +137,9 @@ const getCoursesByCategoryID = async (req, res) => {
   try {
     const courses = await Course.find({
       CategoryID: { _id: req.params.id },
-    });
+    })
+      .populate("CategoryID", "categoryName") // Fetch category details
+      .populate("instructorID", "name");
     if (!courses) {
       return res
         .status(404)
@@ -125,9 +148,39 @@ const getCoursesByCategoryID = async (req, res) => {
         );
     }
 
+   
+
+    const responseData = courses.map((course) => {
+      const {
+        mediaCount,
+        rating,
+        ratingCount,
+        _id,
+        name,
+        thumbnail,
+        description,
+        courseDuration,
+        CategoryID,
+        instructorID,
+      } = course;
+
+      return {
+        mediaCount,
+        rating,
+        ratingCount,
+        _id,
+        name,
+        thumbnail,
+        description,
+        courseDuration,
+        CategoryID,
+        instructorID,
+      };
+    });
+
     return res
       .status(200)
-      .json(ApiSuccess(200, courses, "Courses fetched successfully"));
+      .json(ApiSuccess(200, responseData, "Courses fetched successfully"));
   } catch (error) {
     return res.status(500).json(ApiErrors(500, error.message));
   }
