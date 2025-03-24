@@ -106,6 +106,9 @@ const getCourseById = async (req, res) => {
   const { courseID } = req.params;
   try {
     const course = await Course.findById(courseID);
+    if (!course) {
+      return res.status(404).json(ApiErrors(404, "Course not found"));
+    }
 
     const videos = await CourseVideo.find({ courseID });
     console.log("Videos from database", videos);
@@ -147,8 +150,6 @@ const getCoursesByCategoryID = async (req, res) => {
           ApiErrors(404, "There are no courses available in this category")
         );
     }
-
-   
 
     const responseData = courses.map((course) => {
       const {
