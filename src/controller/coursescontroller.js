@@ -103,7 +103,7 @@ const getCourses = async (req, res) => {
 
 // Get a single course by ID
 const getCourseById = async (req, res) => {
-  const { courseID } = req.params;
+  const { courseID } = req.query;
   try {
     const course = await Course.findById(courseID);
     if (!course) {

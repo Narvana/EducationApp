@@ -24,12 +24,12 @@ router.get("/courses/categoryid=:id", getCoursesByCategoryID);
 
 router.get("/teachers", getInstructor);
 
-router.get("/course/:courseID", getCourseById);
+router.get("/course", getCourseById);
 
 // Rating
 
 router.post("/rating", authMiddleware, addRating);
 
-router.get("/ratings/:courseID", getCourseRatings);
+router.get("/ratings", getCourseRatings);
 
 module.exports = router;

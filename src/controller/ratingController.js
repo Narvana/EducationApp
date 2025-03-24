@@ -1,5 +1,6 @@
 const Course = require("../models/courses");
 const Rating = require("../models/rating");
+const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 
 const addRating = async (req, res) => {
@@ -50,11 +51,11 @@ const addRating = async (req, res) => {
 
 const getCourseRatings = async (req, res) => {
   try {
-    const { courseID } = req.params;
+    const { courseID } = req.query;
 
     const ratings = await Rating.find({ courseID }).populate(
-      "userID",
-      "name email"
+      "studentID",
+      "name"
     );
 
     res
