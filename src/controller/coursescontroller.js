@@ -56,7 +56,7 @@ const createCourse = async (req, res) => {
       .status(201)
       .json(ApiSuccess(201, course, "Course created successfully"));
   } catch (error) {
-    return res.status(500).json(ApiErrors(500, error.message));
+    return res.status(500).json(ApiErrors(500, error.message)); 
   }
 };
 

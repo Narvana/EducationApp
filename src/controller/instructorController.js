@@ -15,7 +15,7 @@ const updateInstructor = async (req, res) => {
         .json({ status: 0, message: "Instructor not found!" });
     }
 
-    const imageLink = instructorExists.image;
+    let imageLink = instructorExists.image;
     if (file) {
       imageLink = await uploadToFirebase(file);
     }
