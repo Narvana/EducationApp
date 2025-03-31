@@ -63,7 +63,9 @@ const createCourse = async (req, res) => {
 // Get all courses
 const getCourses = async (req, res) => {
   try {
-    let courses = await Course.find();
+    let courses = await Course.find()
+      .populate("CategoryID", "categoryName") // Fetch category details
+      .populate("instructorID", "name");;
 
     // Fetch videos for each course
     const courseIDs = courses.map((course) => course._id);

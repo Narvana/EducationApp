@@ -11,6 +11,7 @@ const {
   getCourseRatings,
 } = require("../controller/ratingController");
 const { authMiddleware } = require("../middleware/Admin/authMiddleware");
+const { getVideosByCourseID } = require("../controller/courseVideoController");
 const router = express.Router();
 
 // Login
@@ -25,6 +26,8 @@ router.get("/courses/categoryid=:id", getCoursesByCategoryID);
 router.get("/teachers", getInstructor);
 
 router.get("/course", getCourseById);
+
+router.get("/courses/media/:courseID", getVideosByCourseID);
 
 // Rating
 
