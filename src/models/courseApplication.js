@@ -22,4 +22,9 @@ const CourseApplicationSchema = new Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("CourseApplication", CourseApplicationSchema);
+const CourseApplication = mongoose.model(
+  "CourseApplication",
+  CourseApplicationSchema
+);
+
+module.exports = CourseApplication;

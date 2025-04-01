@@ -16,7 +16,7 @@ const authMiddleware = (req, res, next) => {
       "xQJslU3ieVjhYt0xCUu8hhUGayx265KgfP4W0abHhvfJJA8xFO8cYVChPGhjz0JT4w1GP3vURXdXBk8jC2Hu4W49jz"
     );
 
-    req.admin = decoded; // Attach decoded data to req
+    req.user = decoded; // Attach decoded data to req
     next();
   } catch (error) {
     return res.status(401).json({ msg: "Invalid token" });

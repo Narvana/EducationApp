@@ -12,6 +12,9 @@ const {
 } = require("../controller/ratingController");
 const { authMiddleware } = require("../middleware/Admin/authMiddleware");
 const { getVideosByCourseID } = require("../controller/courseVideoController");
+
+const { homePage } = require("../controller/homeController.js");
+const { enrollCourse } = require("../controller/courseEnrollment.js");
 const router = express.Router();
 
 // Login
@@ -21,7 +24,7 @@ router.post("/login", studentLogin);
 
 router.get("/categories/get", getCategories);
 
-router.get("/courses/categoryid=:id", getCoursesByCategoryID);
+router.get("/courses/categoryid=:id", authMiddleware, getCoursesByCategoryID);
 
 router.get("/teachers", getInstructor);
 
@@ -34,5 +37,12 @@ router.get("/courses/media/:courseID", getVideosByCourseID);
 router.post("/rating", authMiddleware, addRating);
 
 router.get("/ratings", getCourseRatings);
+
+// Homepage
+
+router.get("/home", homePage);
+
+// Enrolled Courses for students
+router.post("/enrolledCourses", authMiddleware, enrollCourse);
 
 module.exports = router;

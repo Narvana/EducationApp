@@ -41,6 +41,12 @@ const {
   updateInstructor,
   deleteInstructor,
 } = require("../controller/instructorController");
+const {
+  updateEnrollmentStatus,
+  getPendingApplications,
+  deleteApplication,
+  getAllApplications,
+} = require("../controller/courseEnrollment");
 
 const router = express.Router();
 
@@ -184,6 +190,25 @@ router.delete(
   deleteStudent,
   authMiddleware,
   superAdminMiddleware
+);
+
+// Enrolled Courses pending request
+router.put(
+  "/enrollment/update/:id",
+  authMiddleware,
+  superAdminMiddleware,
+  updateEnrollmentStatus
+);
+
+router.get("/enrollment/pending", getPendingApplications);
+
+router.get("/enrollment/all", getAllApplications);
+
+router.delete(
+  "/enrollment/delete/:id",
+  authMiddleware,
+  superAdminMiddleware,
+  deleteApplication
 );
 
 module.exports = router;

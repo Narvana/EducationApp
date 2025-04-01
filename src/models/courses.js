@@ -29,6 +29,10 @@ const CourseSchema = new Schema(
       required: true,
       ref: "Instructor",
     },
+    isEnrolled: {
+      type: Boolean,
+      default: false,
+    },
     media_files: [],
     mediaCount: {
       type: Number,

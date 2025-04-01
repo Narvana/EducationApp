@@ -1,4 +1,3 @@
-const mongoose = require("mongoose");
 const Course = require("../models/courses");
 const CourseVideo = require("../models/CoursesVideos");
 const Instructor = require("../models/instructor");
@@ -6,6 +5,8 @@ const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 const { uploadToFirebase } = require("../utils/firebase/firebaseConfig");
 const Category = require("../models/category");
+const courseApplication = require("../models/courseApplication");
+const CourseApplication = require("../models/courseApplication");
 
 // Create a new course
 const createCourse = async (req, res) => {
@@ -56,7 +57,7 @@ const createCourse = async (req, res) => {
       .status(201)
       .json(ApiSuccess(201, course, "Course created successfully"));
   } catch (error) {
-    return res.status(500).json(ApiErrors(500, error.message)); 
+    return res.status(500).json(ApiErrors(500, error.message));
   }
 };
 
@@ -65,7 +66,7 @@ const getCourses = async (req, res) => {
   try {
     let courses = await Course.find()
       .populate("CategoryID", "categoryName") // Fetch category details
-      .populate("instructorID", "name");;
+      .populate("instructorID", "name");
 
     // Fetch videos for each course
     const courseIDs = courses.map((course) => course._id);
@@ -140,12 +141,15 @@ const getCourseById = async (req, res) => {
 
 const getCoursesByCategoryID = async (req, res) => {
   try {
-    const courses = await Course.find({
-      CategoryID: { _id: req.params.id },
-    })
-      .populate("CategoryID", "categoryName") // Fetch category details
-      .populate("instructorID", "name");
-    if (!courses) {
+    const userID = req.user ? req.user.id : null; // Check if user is logged in
+
+    // Fetch all courses in the given category
+    const courses = await Course.find({ CategoryID: req.params.id })
+      .populate("CategoryID", "categoryName") // Get category details
+      .populate("instructorID", "name"); // Get instructor name
+
+    // If no courses found
+    if (!courses || courses.length === 0) {
       return res
         .status(404)
         .json(
@@ -153,31 +157,41 @@ const getCoursesByCategoryID = async (req, res) => {
         );
     }
 
+    let enrollmentMap = {};
+
+    // If the user is logged in, fetch course applications
+    if (userID) {
+      const courseIDs = courses.map((course) => course._id);
+
+      const courseApplications = await CourseApplication.find({
+        courseID: { $in: courseIDs },
+        userID: userID, // Only fetch applications for the logged-in user
+      }).select("status courseID");
+
+      // Map course applications to enrollment status
+      courseApplications.forEach((app) => {
+        enrollmentMap[app.courseID.toString()] = app.status;
+      });
+    }
+
+    // Construct response data
     const responseData = courses.map((course) => {
-      const {
-        mediaCount,
-        rating,
-        ratingCount,
-        _id,
-        name,
-        thumbnail,
-        description,
-        courseDuration,
-        CategoryID,
-        instructorID,
-      } = course;
+      const courseId = course._id.toString();
+      const enrollmentStatus = enrollmentMap[courseId] || "not applied";
 
       return {
-        mediaCount,
-        rating,
-        ratingCount,
-        _id,
-        name,
-        thumbnail,
-        description,
-        courseDuration,
-        CategoryID,
-        instructorID,
+        _id: course._id,
+        name: course.name,
+        thumbnail: course.thumbnail,
+        description: course.description,
+        mediaCount: course.mediaCount,
+        rating: course.rating,
+        ratingCount: course.ratingCount,
+        courseDuration: course.courseDuration,
+        CategoryID: course.CategoryID,
+        instructorID: course.instructorID,
+        isEnrolled: userID ? enrollmentStatus === "approved" : false, // Only check if user is logged in
+        enrollmentStatus: userID ? enrollmentStatus : "not logged in", // If not logged in, show "not logged in"
       };
     });
 
@@ -188,6 +202,7 @@ const getCoursesByCategoryID = async (req, res) => {
     return res.status(500).json(ApiErrors(500, error.message));
   }
 };
+
 
 // Update a course by ID
 const updateCourse = async (req, res) => {
