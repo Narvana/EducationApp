@@ -25,7 +25,7 @@ const authMiddleware = (req, res, next) => {
 
 // Middleware to allow only Super Admins
 const superAdminMiddleware = (req, res, next) => {
-  if (req.admin.role !== "superadmin") {
+  if (req.user.role !== "superadmin") {
     return res.status(403).json({
       msg: "Access Denied! Only Super Admins can perform this action.",
     });
