@@ -36,7 +36,6 @@ const updateEnrollmentStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
   try {
-    console.log(id, status, "Body");
 
     const application = await CourseApplication.findByIdAndUpdate(
       id,
@@ -59,7 +58,9 @@ const updateEnrollmentStatus = async (req, res) => {
 
 const getPendingApplications = async (req, res) => {
   try {
-    const applications = await CourseApplication.find({ status: "pending" });
+    const applications = await CourseApplication.find({ status: "pending" })
+      .populate("userID", "name email") // Fetch user details
+      .populate("courseID", "name"); // Fetch course details;
     if (!applications) {
       return res.status(404).json(ApiErrors(404, "No pending applications."));
     }
@@ -80,7 +81,9 @@ const getPendingApplications = async (req, res) => {
 
 const getAllApplications = async (req, res) => {
   try {
-    const applications = await CourseApplication.find();
+    const applications = await CourseApplication.find()
+      .populate("userID", "name email") // Fetch user details
+      .populate("courseID", "name"); // Fetch course details;
     if (!applications) {
       return res.status(404).json(ApiErrors(404, "No applications found."));
     }
