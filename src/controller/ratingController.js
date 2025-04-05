@@ -66,4 +66,32 @@ const getCourseRatings = async (req, res) => {
   }
 };
 
-module.exports = { addRating, getCourseRatings };
+const getRatingsAll = async (req, res) => {
+  try {
+    const ratings = await Rating.find()
+      .populate("studentID", "name")
+      .populate("courseID", "name");
+    res
+      .status(200)
+      .json(ApiSuccess(200, ratings, "Ratings fetched successfully"));
+  } catch (error) {
+    res.status(500).json(ApiErrors(500, error.message));
+  }
+};
+
+const deleteRating = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deletedRating = await Rating.findByIdAndDelete(id);
+    if (!deletedRating) {
+      return res.status(404).json({ message: "Rating not found." });
+    }
+    res
+      .status(200)
+      .json(ApiSuccess(200, deletedRating, "Rating deleted successfully."));
+  } catch (error) {
+    res.status(500).json(ApiErrors(500, error.message));
+  }
+};
+
+module.exports = { addRating, getCourseRatings, getRatingsAll, deleteRating };

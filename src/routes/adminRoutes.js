@@ -47,6 +47,7 @@ const {
   deleteApplication,
   getAllApplications,
 } = require("../controller/courseEnrollment");
+const { getCourseRatings, deleteRating, getRatingsAll } = require("../controller/ratingController");
 
 const router = express.Router();
 
@@ -209,6 +210,16 @@ router.delete(
   authMiddleware,
   superAdminMiddleware,
   deleteApplication
+);
+
+// Ratings & Reviews
+router.get("/ratings", getRatingsAll);
+
+router.delete(
+  "/ratings/delete/:id",
+  authMiddleware,
+  superAdminMiddleware,
+  deleteRating
 );
 
 module.exports = router;
