@@ -234,6 +234,6 @@ router.get("/dashboard", getDashboardData);
 
 // Verify Token
 
-router.get("/verify-token", authMiddleware, superAdminMiddleware, verifyToken);
+// router.get("/verify-token", authMiddleware, superAdminMiddleware, verifyToken);
 
 module.exports = router;
