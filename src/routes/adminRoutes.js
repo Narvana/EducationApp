@@ -12,6 +12,7 @@ const {
   createInstructor,
   loginAdmin,
   getInstructors,
+  verifyToken,
 } = require("../controller/adminController");
 const {
   createCategory,
@@ -47,7 +48,13 @@ const {
   deleteApplication,
   getAllApplications,
 } = require("../controller/courseEnrollment");
-const { getCourseRatings, deleteRating, getRatingsAll } = require("../controller/ratingController");
+const {
+  getCourseRatings,
+  deleteRating,
+  getRatingsAll,
+} = require("../controller/ratingController");
+const { getDashboardData } = require("../controller/dashboardController");
+const { verify } = require("jsonwebtoken");
 
 const router = express.Router();
 
@@ -221,5 +228,12 @@ router.delete(
   superAdminMiddleware,
   deleteRating
 );
+
+// Dashboard
+router.get("/dashboard", getDashboardData);
+
+// Verify Token
+
+router.get("/verify-token", authMiddleware, superAdminMiddleware, verifyToken);
 
 module.exports = router;
