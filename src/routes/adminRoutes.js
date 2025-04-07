@@ -156,7 +156,10 @@ router.delete(
 router.post(
   "/courses/videos/add",
   authMiddleware,
-  upload.single("media"),
+  upload.fields([
+    { name: "media", maxCount: 1 }, // Single file // Multiple files
+    { name: "document", maxCount: 1 }, // Single file // Multiple files
+  ]),
   superAdminMiddleware,
   createVideo
 );
@@ -164,7 +167,10 @@ router.post(
 router.put(
   "/courses/videos/update/:id",
   authMiddleware,
-  upload.single("media"),
+  upload.fields([
+    { name: "media", maxCount: 1 }, // Single file // Multiple files
+    { name: "document", maxCount: 1 }, // Single file // Multiple files
+  ]),
   superAdminMiddleware,
   updateVideo
 );

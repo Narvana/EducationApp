@@ -8,9 +8,8 @@ const { uploadToFirebase } = require("../utils/firebase/firebaseConfig");
 const createVideo = async (req, res) => {
   try {
     const { courseID, title, mediaType, duration } = req.body;
-    const file = req.file;
+    const files = req.files;
 
-    // Validate course existence
     const course = await Course.findById(courseID);
     if (!course) {
       return res.status(404).json(ApiErrors(404, "Course not found!"));
@@ -23,8 +22,14 @@ const createVideo = async (req, res) => {
     }
 
     let mediaLink = "";
-    if (file) {
-      mediaLink = await uploadToFirebase(file);
+    let documentLink = "";
+
+    if (files?.media?.[0]) {
+      mediaLink = await uploadToFirebase(files.media[0]); // this must be a valid file object
+    }
+
+    if (files?.document?.[0]) {
+      documentLink = await uploadToFirebase(files.document[0]);
     }
 
     const newMedia = new CourseVideo({
@@ -32,9 +37,9 @@ const createVideo = async (req, res) => {
       courseName: course.name,
       title,
       mediaType,
-      duration,
       duration: mediaType !== "pdf" ? duration : 0,
       media: mediaLink,
+      document: documentLink,
     });
 
     await newMedia.save();
@@ -48,12 +53,13 @@ const createVideo = async (req, res) => {
   }
 };
 
+
 // Update an existing course video
 const updateVideo = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, duration, mediaType } = req.body;
-    const file = req.file; // Get uploaded file
+   const files = req.files; // Get uploaded file
 
     // Find the existing video
     const existingVideo = await CourseVideo.findById(id);
@@ -64,14 +70,25 @@ const updateVideo = async (req, res) => {
     }
 
     let mediaLink = existingVideo.video; // Keep the old video if no new file is uploaded
+    let documentLink = existingVideo?.document; // Keep the old document if no new file is uploaded
 
-    if (file) {
-      mediaLink = await uploadToFirebase(file); // Upload new video
-    }
+     if (files?.media?.[0]) {
+       mediaLink = await uploadToFirebase(files.media[0]); // this must be a valid file object
+     }
+
+     if (files?.document?.[0]) {
+       documentLink = await uploadToFirebase(files.document[0]);
+     }
 
     const updatedMedia = await CourseVideo.findByIdAndUpdate(
       id,
-      { title, duration: mediaType !== "pdf" ? duration : 0, mediaType, media: mediaLink },
+      {
+        title,
+        duration: mediaType !== "pdf" ? duration : 0,
+        mediaType,
+        media: mediaLink,
+        document: documentLink,
+      },
       { new: true }
     );
 

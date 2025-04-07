@@ -31,6 +31,10 @@ const CourseVideos = new Schema(
       type: String,
       required: true,
     },
+    document: {
+      type: String,
+      required: false,
+    },
   },
   {
     timestamps: true,
