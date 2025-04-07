@@ -168,8 +168,8 @@ router.put(
   "/courses/videos/update/:id",
   authMiddleware,
   upload.fields([
-    { name: "media", maxCount: 1 }, // Single file // Multiple files
-    { name: "document", maxCount: 1 }, // Single file // Multiple files
+    { name: "media", maxCount: 1 },
+    { name: "document", maxCount: 1 },
   ]),
   superAdminMiddleware,
   updateVideo
