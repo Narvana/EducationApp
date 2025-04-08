@@ -145,8 +145,7 @@ const getCoursesByCategoryID = async (req, res) => {
 
     // Fetch all courses in the given category
     const courses = await Course.find({ CategoryID: req.params.id })
-      .populate("CategoryID", "categoryName") // Get category details
-      .populate("instructorID", "name"); // Get instructor name
+     
 
     // If no courses found
     if (!courses || courses.length === 0) {
