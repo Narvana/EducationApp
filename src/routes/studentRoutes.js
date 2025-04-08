@@ -15,6 +15,8 @@ const { getVideosByCourseID } = require("../controller/courseVideoController");
 
 const { homePage } = require("../controller/homeController.js");
 const { enrollCourse } = require("../controller/courseEnrollment.js");
+const verifyToken = require("../middleware/token/verifyToken.js");
+const { addRecentlyWatched } = require("../controller/recentlyWatched.js");
 const router = express.Router();
 
 // Login
@@ -40,9 +42,17 @@ router.get("/ratings", getCourseRatings);
 
 // Homepage
 
-router.get("/home", homePage);
+router.get("/home", authMiddleware, verifyToken, homePage);
 
 // Enrolled Courses for students
 router.post("/enrolledCourses", authMiddleware, enrollCourse);
+
+// Recently Watched Courses for students
+router.post(
+  "/recentlyWatched",
+  authMiddleware,
+  verifyToken,
+  addRecentlyWatched
+);
 
 module.exports = router;

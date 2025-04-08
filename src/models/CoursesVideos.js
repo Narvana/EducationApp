@@ -23,9 +23,9 @@ const CourseVideos = new Schema(
     },
     duration: {
       type: Number,
-      required: function () {
-        return this.mediaType !== "pdf"; // Required only if not a PDF
-      },
+      // required: function () {
+      //   return this.mediaType !== "pdf"; 
+      // },
     },
     media: {
       type: String,
