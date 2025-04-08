@@ -27,8 +27,9 @@ const homePage = async (req, res) => {
           title: media.title,
           media: media.media,
           progress: item.progress,
+          progressPercentage: item.progressPercentage,
           mediaType: media.mediaType,
-          duration: media.duration,
+          duration: item.duration,
         };
       });
     }

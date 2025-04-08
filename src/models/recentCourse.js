@@ -11,6 +11,10 @@ const RecentCourseSchema = new Schema(
       ref: "CourseVideos",
       required: true,
     },
+    duration: {
+      type: Number,
+  
+    },
     watchedAt: {
       type: Date,
       default: Date.now,
@@ -18,6 +22,11 @@ const RecentCourseSchema = new Schema(
     progress: {
       type: Number, // in seconds or milliseconds
       default: 0,
+    },
+    progressPercentage: {
+      type: Number,
+      default: 0,
+      max: 100,
     },
   },
   { timestamps: true }

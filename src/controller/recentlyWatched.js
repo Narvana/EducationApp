@@ -6,9 +6,7 @@ const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 
 const getRecentlyWatched = async (req, res) => {
   try {
-    const { studentID } = req.params; // Assuming you get the student ID from the request parameters
-
-    // Find the student by ID
+    const { studentID } = req.params; 
     const student = await Student.findById(studentID);
     if (!student) {
       return res.status(404).json(ApiErrors(404, "Student not found!"));
@@ -50,14 +48,33 @@ const addRecentlyWatched = async (req, res) => {
       return res.status(404).json(ApiErrors(404, "Student not found!"));
     }
 
-    const existingCourse = await RecentCourse.findOne({
-      userID,
-      mediaID,
-    });
+    const media = await CourseVideo.findById(mediaID);
+    if (!media) {
+      return res.status(404).json(ApiErrors(404, "Media not found!"));
+    }
+
+    let totalDuration = media.duration;
+    let progressSeconds = Number(progress);
+    let progressPercentage = 0;
+
+    if (media.mediaType === "pdf") {
+      progressSeconds = 0;
+      progressPercentage = 100;
+    } else {
+      const totalDuration = media.duration; 
+      progressPercentage = Math.min(
+        100,
+        Math.round((progressSeconds / totalDuration) * 100)
+      );
+    }
+
+    const existingCourse = await RecentCourse.findOne({ userID, mediaID });
+
     if (existingCourse) {
-      existingCourse.progress = progress; // Update progress if already exists
+      existingCourse.progress = progressSeconds;
+      existingCourse.progressPercentage = progressPercentage;
       await existingCourse.save();
-      res
+      return res
         .status(200)
         .json(
           ApiSuccess(200, existingCourse, "Progress updated successfully!")
@@ -66,12 +83,14 @@ const addRecentlyWatched = async (req, res) => {
       const newRecentCourse = new RecentCourse({
         userID,
         mediaID,
-        progress,
+        progress: progressSeconds,
+        progressPercentage,
+        duration: totalDuration,
       });
 
       await newRecentCourse.save();
 
-      res
+      return res
         .status(201)
         .json(
           ApiSuccess(
@@ -83,7 +102,7 @@ const addRecentlyWatched = async (req, res) => {
     }
   } catch (error) {
     console.error("Error:", error);
-    res.status(500).json(ApiErrors(500, error.message));
+    return res.status(500).json(ApiErrors(500, error.message));
   }
 };
 
