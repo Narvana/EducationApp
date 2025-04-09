@@ -25,7 +25,7 @@ const createVideo = async (req, res) => {
 
     let mediaLink = "";
     let documentLink = "";
-    let mediaDuration =0;
+    let mediaDuration = 0;
 
     if (files?.media?.[0]) {
       mediaLink = await uploadToFirebase(files.media[0]); // this must be a valid file object
@@ -36,7 +36,7 @@ const createVideo = async (req, res) => {
     }
     if (mediaType === "video" || mediaType === "audio") {
     try {
-      mediaDuration = await getVideoDuration(buffer, files.media[0]);
+      mediaDuration = await getVideoDuration(mediaLink);
       console.log("✔ Duration:", duration);
     } catch (error) {
       console.error("❌ Render error:", error.message);
