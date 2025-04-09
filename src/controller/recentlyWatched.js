@@ -146,12 +146,12 @@ if (existingCourse) {
 
     return res.status(200).json(
       ApiSuccess(200, {
-        message: "Progress updated successfully!",
+       
         streak,
         secondsWatchedToday,
         secondsLeft,
         streakProgress,
-      })
+      }, "Progress updated successfully!")
     );
   } catch (error) {
     console.error("Error:", error);

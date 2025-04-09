@@ -25,7 +25,7 @@
 //     return duration;
 //   } catch (error) {
 //     console.error("Error getting video duration:", error);
-  
+
 //   }
 // };
 
@@ -48,9 +48,3 @@ const getVideoDuration = (filePath) => {
 };
 
 module.exports = { getVideoDuration };
-
-
-
-
-
-
