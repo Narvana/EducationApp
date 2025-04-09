@@ -85,30 +85,36 @@ const addRecentlyWatched = async (req, res) => {
 
     // ✅ Save to Recently Watched
     const existingCourse = await RecentCourse.findOne({ userID, mediaID });
+    
+let progressDifference = progressSeconds;
 
-    if (existingCourse) {
-      existingCourse.progress = progressSeconds;
-      existingCourse.progressPercentage = progressPercentage;
-      await existingCourse.save();
-    } else {
-      const newRecentCourse = new RecentCourse({
-        userID,
-        mediaID,
-        progress: progressSeconds,
-        progressPercentage,
-        duration: totalDuration,
-      });
-      await newRecentCourse.save();
-    }
+if (existingCourse) {
+  progressDifference = Math.max(0, progressSeconds - existingCourse.progress);
+  existingCourse.progress = progressSeconds;
+  existingCourse.progressPercentage = progressPercentage;
+  await existingCourse.save();
+} else {
+  const newRecentCourse = new RecentCourse({
+    userID,
+    mediaID,
+    progress: progressSeconds,
+    progressPercentage,
+    duration: totalDuration,
+  });
+  await newRecentCourse.save();
+}
+
 
  
     if (media.mediaType === "video" || media.mediaType === "audio") {
       const today = moment().format("YYYY-MM-DD");
-      await WatchHistory.findOneAndUpdate(
-        { userID, date: today },
-        { $inc: { totalSecondsWatched: progressSeconds } },
-        { upsert: true, new: true }
-      );
+      if (progressDifference > 0) {
+        await WatchHistory.findOneAndUpdate(
+          { userID, date: today },
+          { $inc: { totalSecondsWatched: progressDifference } },
+          { upsert: true, new: true }
+        );
+      }
     }
 
  
