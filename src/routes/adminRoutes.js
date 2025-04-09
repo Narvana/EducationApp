@@ -55,6 +55,12 @@ const {
 } = require("../controller/ratingController");
 const { getDashboardData } = require("../controller/dashboardController");
 const { verify } = require("jsonwebtoken");
+const {
+  createBanner,
+  getBanners,
+  updateBanner,
+  deleteBanner,
+} = require("../controller/bannerController");
 
 const router = express.Router();
 
@@ -241,5 +247,28 @@ router.get("/dashboard", getDashboardData);
 // Verify Token
 
 // router.get("/verify-token", authMiddleware, superAdminMiddleware, verifyToken);
+
+// Banner
+router.post(
+  "/banners/create",
+  authMiddleware,
+  superAdminMiddleware,
+  upload.single("image"),
+  createBanner
+);
+router.get("/banners/get", getBanners);
+router.put(
+  "/banners/update/:id",
+  upload.fields([{ name: "image", maxCount: 5 }]),
+  authMiddleware,
+  superAdminMiddleware,
+  updateBanner
+);
+router.delete(
+  "/banners/delete/:id",
+  authMiddleware,
+  superAdminMiddleware,
+  deleteBanner
+);
 
 module.exports = router;

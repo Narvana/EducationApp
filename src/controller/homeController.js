@@ -1,8 +1,10 @@
 const Category = require("../models/category");
 const Course = require("../models/courses");
 const RecentCourse = require("../models/recentCourse");
+const Banner = require("../models/banner");
 const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
+const calculateStreak = require("../utils/Streak/streakandprogress");
 
 const homePage = async (req, res) => {
   try {
@@ -11,14 +13,19 @@ const homePage = async (req, res) => {
     const recentCourses = await Course.find().sort({ createdAt: -1 }).limit(6);
     const topCourses = await Course.find().sort({ rating: -1 }).limit(6);
     const categories = await Category.find();
-
+    const banners = await Banner.find();
     let recentlyWatched = [];
+    let streakData = null;
 
     if (userID) {
-      const recentWatchedDocs = await RecentCourse.find({ userID })
+      streakData = await calculateStreak(userID);
+      const recentWatchedDocs = await RecentCourse.find({
+        userID,
+        progressPercentage: { $lt: 100 },
+      })
         .sort({ updatedAt: -1 })
         .limit(6)
-        .populate("mediaID"); // assumes mediaID references a CourseVideo or Course
+        .populate("mediaID");
 
       recentlyWatched = recentWatchedDocs.map((item) => {
         const media = item.mediaID;
@@ -35,6 +42,10 @@ const homePage = async (req, res) => {
     }
 
     const responseData = {
+      banners: banners.map((banner) => ({
+        _id: banner._id,
+        image: banner.image,
+      })),
       recentCourses: recentCourses.map((course) => ({
         _id: course._id,
         name: course.name,
@@ -64,7 +75,13 @@ const homePage = async (req, res) => {
         categoryName: category.categoryName,
         image: category.image,
       })),
-      recentlyWatched, // included here
+      recentlyWatched,
+      streak: streakData || {
+        streak: 0,
+        todayProgress: 0,
+        secondsLeft: 3600,
+        secondsWatchedToday: 0,
+      },
     };
 
     res
