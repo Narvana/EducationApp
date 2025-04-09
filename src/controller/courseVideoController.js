@@ -35,7 +35,7 @@ const createVideo = async (req, res) => {
     }
     if (mediaType === "video" || mediaType === "audio") {
     try {
-      mediaDuration = await getVideoDuration("path/to/file.mp4");
+      mediaDuration = await getVideoDuration(mediaLink);
       console.log("✔ Duration:", duration);
     } catch (error) {
       console.error("❌ Render error:", error.message);
