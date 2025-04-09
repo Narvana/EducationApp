@@ -18,11 +18,11 @@ const paymentSchema = new mongoose.Schema({
 
 const studentFeeSchema = new mongoose.Schema(
   {
-    studentName: {
+    studentID: {
       type: String,
       required: true,
     },
-    courseName: {
+    courseID: {
       type: String,
       required: true,
     },
@@ -37,6 +37,11 @@ const studentFeeSchema = new mongoose.Schema(
     pendingAmount: {
       type: Number,
       required: true,
+    },
+    status: {
+      type: String,
+      enum: ["Paid", "Pending"],
+      default: "Pending",
     },
     paymentHistory: [paymentSchema],
   },
