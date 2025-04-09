@@ -34,7 +34,13 @@ const createVideo = async (req, res) => {
       documentLink = await uploadToFirebase(files.document[0]);
     }
     if (mediaType === "video" || mediaType === "audio") {
-      mediaDuration = await getVideoDuration(mediaLink); // this must be a valid file object
+    try {
+      mediaDuration = await getVideoDuration("path/to/file.mp4");
+      console.log("✔ Duration:", duration);
+    } catch (error) {
+      console.error("❌ Render error:", error.message);
+      console.error("❌ Full stack:", error.stack);
+    }
     }
 
     const newMedia = new CourseVideo({

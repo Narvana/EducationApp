@@ -25,7 +25,7 @@ const getVideoDuration = async (filePath) => {
     return duration;
   } catch (error) {
     console.error("Error getting video duration:", error);
-    return 0;
+  
   }
 };
 
