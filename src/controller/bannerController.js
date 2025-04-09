@@ -6,10 +6,7 @@ const Banner = require("../models/banner");
 // CREATE banner
 const createBanner = async (req, res) => {
   try {
-   
     const file = req.file;
-
-  
 
     let imageUrl = "";
 
@@ -47,7 +44,6 @@ const getBanners = async (req, res) => {
 const updateBanner = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title } = req.body;
     const file = req.file;
 
     const banner = await Banner.findById(id);
@@ -61,11 +57,6 @@ const updateBanner = async (req, res) => {
       banner.image = newImageUrl;
     }
 
-    // Update title if provided
-    if (title) {
-      banner.title = title;
-    }
-
     await banner.save();
 
     return res
@@ -76,7 +67,6 @@ const updateBanner = async (req, res) => {
     return res.status(500).json(ApiErrors(500, error.message));
   }
 };
-
 
 // DELETE banner
 const deleteBanner = async (req, res) => {

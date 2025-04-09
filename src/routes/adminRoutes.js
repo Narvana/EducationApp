@@ -61,6 +61,12 @@ const {
   updateBanner,
   deleteBanner,
 } = require("../controller/bannerController");
+const {
+  createStudentFee,
+  getAllStudents,
+  addPayment,
+  getStudentById,
+} = require("../controller/feeController");
 
 const router = express.Router();
 
@@ -259,7 +265,7 @@ router.post(
 router.get("/banners/get", getBanners);
 router.put(
   "/banners/update/:id",
-  upload.fields([{ name: "image", maxCount: 5 }]),
+  upload.single("image"),
   authMiddleware,
   superAdminMiddleware,
   updateBanner
@@ -270,5 +276,29 @@ router.delete(
   superAdminMiddleware,
   deleteBanner
 );
+
+// Fee Payment
+
+// Create student fee record
+router.post(
+  "/student/fee/create",
+  authMiddleware,
+  superAdminMiddleware,
+  createStudentFee
+);
+
+// Add payment to student record
+router.post(
+  "/student/fee/pay/:id",
+  authMiddleware,
+  superAdminMiddleware,
+  addPayment
+);
+
+// Get all students
+router.get("/student/fee", getAllStudents);
+
+// Get single student by ID
+router.get("/student/fee/:id", getStudentById);
 
 module.exports = router;
