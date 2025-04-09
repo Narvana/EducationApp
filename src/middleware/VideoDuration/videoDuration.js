@@ -31,23 +31,32 @@
 
 // module.exports = { getVideoDuration };
 
+const fs = require("fs");
+const path = require("path");
 const ffmpeg = require("fluent-ffmpeg");
 const ffprobe = require("ffprobe-static");
-const path = require("path");
-
 ffmpeg.setFfprobePath(ffprobe.path);
 
-const getVideoDuration = (filePath) => {
+/**
+ * Save buffer to temp file and get duration
+ */
+const getVideoDuration = (buffer, originalName) => {
   return new Promise((resolve, reject) => {
-    ffmpeg.ffprobe(filePath, (err, metadata) => {
+    const tempFilePath = path.join("/tmp", Date.now() + "-" + originalName);
+    fs.writeFileSync(tempFilePath, buffer);
+
+    ffmpeg.ffprobe(tempFilePath, (err, metadata) => {
       if (err) return reject(err);
-      const durationInSeconds = Math.round(metadata.format.duration);
-      resolve(durationInSeconds);
+      const duration = Math.round(metadata.format.duration);
+      // Clean up
+      fs.unlinkSync(tempFilePath);
+      resolve(duration);
     });
   });
 };
 
 module.exports = { getVideoDuration };
+
 
 
 
