@@ -19,11 +19,13 @@ const paymentSchema = new mongoose.Schema({
 const studentFeeSchema = new mongoose.Schema(
   {
     studentID: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "student",
       required: true,
     },
     courseID: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
       required: true,
     },
     totalFee: {

@@ -81,7 +81,7 @@ const addPayment = async (req, res) => {
 // Get all student fee records
 const getAllStudents = async (req, res) => {
   try {
-    const students = await StudentFee.find();
+    const students = await StudentFee.find().populate("studentID", "name contact email").populate("courseID", "name");
     res
       .status(200)
       .json(ApiSuccess(200, students, "Students retrieved successfully"));

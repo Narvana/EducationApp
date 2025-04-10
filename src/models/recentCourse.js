@@ -12,8 +12,7 @@ const RecentCourseSchema = new Schema(
       required: true,
     },
     duration: {
-      type: Number,
-  
+      type: Number, 
     },
     watchedAt: {
       type: Date,
