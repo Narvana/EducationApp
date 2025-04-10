@@ -34,6 +34,7 @@ const CourseVideos = new Schema(
     document: {
       type: String,
       required: false,
+      default: null
     },
   },
   {

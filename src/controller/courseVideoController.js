@@ -24,7 +24,7 @@ const createVideo = async (req, res) => {
     // }
 
     let mediaLink = "";
-    let documentLink = "";
+    let documentLink = null;
     let mediaDuration = 0;
 
     if (files?.media?.[0]) {
@@ -51,7 +51,7 @@ const createVideo = async (req, res) => {
       mediaType,
       duration: mediaType !== "pdf" ? mediaDuration : 0,
       media: mediaLink,
-      document: documentLink,
+      document: documentLink || null,
     });
 
     await newMedia.save();
@@ -145,12 +145,21 @@ const getVideosByCourseID = async (req, res) => {
         .json({ message: "No videos found for this course" });
     }
 
+    // Ensure each video has a 'document' field
+    const updatedVideos = videos.map((video) => {
+      if (!video.document) {
+        return { ...video._doc, document: null }; // Mongoose document needs ._doc to destructure cleanly
+      }
+      return video;
+    });
+
     res
       .status(200)
-      .json(ApiSuccess(200, videos, "Videos fetched successfully"));
+      .json(ApiSuccess(200, updatedVideos, "Videos fetched successfully"));
   } catch (error) {
     res.status(500).json(ApiErrors(500, error.message));
   }
 };
+
 
 module.exports = { createVideo, updateVideo, deleteVideo, getVideosByCourseID };
