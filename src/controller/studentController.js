@@ -71,6 +71,7 @@ const studentLogin = async (req, res) => {
         name: student.name,
         email: student.email,
         role: student.role,
+        isApproved: student.isApproved,
       },
       message: "Student logged in successfully",
     });

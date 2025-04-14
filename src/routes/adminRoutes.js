@@ -67,6 +67,11 @@ const {
   addPayment,
   getStudentById,
 } = require("../controller/feeController");
+const {
+  getUnapprovedProfiles,
+  approveStudent,
+  getAllProfile,
+} = require("../controller/studentProfile");
 
 const router = express.Router();
 
@@ -300,5 +305,19 @@ router.get("/student/fee", getAllStudents);
 
 // Get single student by ID
 router.get("/student/fee/:id", getStudentById);
+
+// Student Profile
+
+// Get all unapproved profiles (admin only)
+router.get("/student-profile/unapproved", getUnapprovedProfiles);
+
+router.put(
+  "/student-profile/status/:id",
+  authMiddleware,
+  superAdminMiddleware,
+  approveStudent
+);
+
+router.get("/student-profile", getAllProfile);
 
 module.exports = router;

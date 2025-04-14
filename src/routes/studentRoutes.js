@@ -14,9 +14,15 @@ const { authMiddleware } = require("../middleware/Admin/authMiddleware");
 const { getVideosByCourseID } = require("../controller/courseVideoController");
 
 const { homePage } = require("../controller/homeController.js");
-const { enrollCourse } = require("../controller/courseEnrollment.js");
+const { enrollCourse, getCoursesbyStudentID } = require("../controller/courseEnrollment.js");
 const verifyToken = require("../middleware/token/verifyToken.js");
 const { addRecentlyWatched } = require("../controller/recentlyWatched.js");
+const {
+  createProfile,
+  updateProfile,
+  getProfileByStudentId,
+  getAllProfile,
+} = require("../controller/studentProfile.js");
 const router = express.Router();
 
 // Login
@@ -33,6 +39,8 @@ router.get("/teachers", getInstructor);
 router.get("/course", getCourseById);
 
 router.get("/courses/media/:courseID", getVideosByCourseID);
+
+router.get("/mycourses", authMiddleware, verifyToken, getCoursesbyStudentID)
 
 // Rating
 
@@ -54,5 +62,21 @@ router.post(
   verifyToken,
   addRecentlyWatched
 );
+
+// Student Profile
+
+router.post("/student-profile/create", authMiddleware, createProfile);
+
+// Update existing student profile
+router.put("/student-profile/update/:id", authMiddleware, updateProfile);
+
+// Get profile by student ID
+router.get(
+  "/student-profile/:id",
+  authMiddleware,
+  getProfileByStudentId
+);
+
+
 
 module.exports = router;

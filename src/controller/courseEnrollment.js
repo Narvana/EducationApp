@@ -36,7 +36,6 @@ const updateEnrollmentStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
   try {
-
     const application = await CourseApplication.findByIdAndUpdate(
       id,
       { status },
@@ -115,10 +114,33 @@ const deleteApplication = async (req, res) => {
   }
 };
 
+const getCoursesbyStudentID = async (req, res) => {
+  try {
+    const id = req.user.id;
+    const courses = await CourseApplication.find({
+      userID: id,
+      status: "Approved",
+    });
+
+    if (!courses) {
+      return res
+        .status(404)
+        .json(ApiErrors(404, "This student is not enrolled in any courses."));
+    }
+
+    res
+      .status(200)
+      .json(ApiSuccess(200, courses, "Courses fetched successfully"));
+  } catch (error) {
+    res.status(500).json(ApiErrors(500, error.message));
+  }
+};
+
 module.exports = {
   enrollCourse,
   updateEnrollmentStatus,
   getPendingApplications,
   getAllApplications,
   deleteApplication,
+  getCoursesbyStudentID,
 };

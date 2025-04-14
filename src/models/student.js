@@ -23,6 +23,10 @@ const StudentSchema = new Schema(
       type: String,
       default: "Student",
     },
+    isApproved: {
+      type: Boolean,
+      default: false,
+    },
     createdAt: {
       type: Date,
       default: Date.now,
