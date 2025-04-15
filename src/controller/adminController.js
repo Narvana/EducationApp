@@ -92,19 +92,19 @@ const getInstructors = async (req, res) => {
         const courses = await Course.find({ instructorID: instructor._id });
 
         // Gather all student counts for each course
-        let studentCount = 0;
+        let studentcount = 0;
 
         await Promise.all(
           courses.map(async (course) => {
             const students = await Student.find({ courseID: course._id });
-            studentCount += students.length;
+            studentcount += students.length;
           })
         );
 
         return {
           ...instructor.toObject(),
           courseCount: courses.length,
-          studentCount, // ✅ Total students in all courses by this instructor
+          studentcount, // ✅ Total students in all courses by this instructor
         };
       })
     );
