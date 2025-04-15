@@ -1,5 +1,6 @@
 const Admin = require("../models/admin");
 const Instructor = require("../models/instructor");
+const Course = require("../models/courses");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const generateAccessToken = require("../utils/token/generateAccessToken");
@@ -84,9 +85,31 @@ const createInstructor = async (req, res) => {
 const getInstructors = async (req, res) => {
   try {
     const instructors = await Instructor.find();
+
+    const instructorWithCourses = await Promise.all(
+      instructors.map(async (instructor) => {
+        const courses = await Course.find({
+          instructorID: instructor._id,
+        });
+
+       
+
+        return {
+          ...instructor.toObject(),
+          courseCount: courses.length,
+          courses
+        };
+      })
+    );
     return res
       .status(200)
-      .json(ApiSuccess(200, instructors, "Instructors fetched successfully!"));
+      .json(
+        ApiSuccess(
+          200,
+          instructorWithCourses,
+          "Instructors fetched successfully!"
+        )
+      );
   } catch (error) {
     res.status(500).json(ApiErrors(500, { error: error.message }));
   }

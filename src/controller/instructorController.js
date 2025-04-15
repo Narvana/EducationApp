@@ -53,37 +53,13 @@ const getInstructor = async (req, res) => {
   try {
     const instructors = await Instructor.find();
 
-    // For each instructor, fetch their courses
-    // const instructorWithCourses = await Promise.all(
-    //   instructors.map(async (instructor) => {
-    //     const courses = await Course.find({
-    //       instructorID: ObjectId(instructor._id),
-    //     });
-
-    //     return {
-    //       ...instructor.toObject(),
-    //       courses,
-    //     };
-    //   })
-    // );
-
-    let courses = [];
-
-    instructors.forEach(async (instructor) => {
-      const course = await Course.find({
-        instructorID: ObjectId(instructor._id),
-      });
-      courses.push(course);
-    });
-
-    console.log(courses);
-
+  
     res
       .status(200)
       .json(
         ApiSuccess(
           200,
-          instructorWithCourses,
+          instructors,
           "Instructors with courses fetched successfully."
         )
       );

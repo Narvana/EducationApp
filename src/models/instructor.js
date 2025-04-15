@@ -48,6 +48,9 @@ const InstructorSchema = new Schema(
       type: Date,
       default: Date.now,
     },
+    courses: [{
+      type: mongoose.Schema.Types.ObjectId
+    }]
   },
   { timestamps: true }
 );
