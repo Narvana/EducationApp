@@ -121,11 +121,11 @@ const getUnapprovedProfiles = async (req, res) => {
     const students = await Student.find({ isApproved: false });
     //   .populate("profile") // assuming 'profile' field exists on Student
     // // Optional: Filter only those who have a profile
-    const result = students.filter((student) => student.profile);
+    // const result = students.filter((student) => student.profile);
 
     res
       .status(200)
-      .json(ApiSuccess(200, result, "student profiles fetched successfully"));
+      .json(ApiSuccess(200, students, "student profiles fetched successfully"));
   } catch (error) {
     console.error("Error fetching unapproved profiles:", error);
     res.status(500).json(ApiErrors(500, error.message));
