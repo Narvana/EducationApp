@@ -2,6 +2,7 @@ const Instructor = require("../models/instructor");
 const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 const { uploadToFirebase } = require("../utils/firebase/firebaseConfig");
+const Course = require("../models/courses");
 
 const updateInstructor = async (req, res) => {
   const { name, email, password, contact, idProof } = req.body;
@@ -50,10 +51,42 @@ const updateInstructor = async (req, res) => {
 
 const getInstructor = async (req, res) => {
   try {
-    const instructor = await Instructor.find();
+    const instructors = await Instructor.find();
+
+    // For each instructor, fetch their courses
+    // const instructorWithCourses = await Promise.all(
+    //   instructors.map(async (instructor) => {
+    //     const courses = await Course.find({
+    //       instructorID: ObjectId(instructor._id),
+    //     });
+
+    //     return {
+    //       ...instructor.toObject(),
+    //       courses,
+    //     };
+    //   })
+    // );
+
+    let courses = [];
+
+    instructors.forEach(async (instructor) => {
+      const course = await Course.find({
+        instructorID: ObjectId(instructor._id),
+      });
+      courses.push(course);
+    });
+
+    console.log(courses);
+
     res
       .status(200)
-      .json(ApiSuccess(200, instructor, "Instructor fetched successfully."));
+      .json(
+        ApiSuccess(
+          200,
+          instructorWithCourses,
+          "Instructors with courses fetched successfully."
+        )
+      );
   } catch (error) {
     res.status(500).json(ApiErrors(500, error.message));
   }

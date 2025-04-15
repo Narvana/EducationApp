@@ -12,7 +12,6 @@ const {
   createInstructor,
   loginAdmin,
   getInstructors,
-  verifyToken,
 } = require("../controller/adminController");
 const {
   createCategory,
@@ -52,6 +51,8 @@ const {
   getCourseRatings,
   deleteRating,
   getRatingsAll,
+  addRating,
+  addAdminRating,
 } = require("../controller/ratingController");
 const { getDashboardData } = require("../controller/dashboardController");
 const { verify } = require("jsonwebtoken");
@@ -72,6 +73,7 @@ const {
   approveStudent,
   getAllProfile,
 } = require("../controller/studentProfile");
+const verifyToken = require("../middleware/token/verifyToken.js");
 
 const router = express.Router();
 
@@ -319,5 +321,15 @@ router.put(
 );
 
 router.get("/student-profile", getAllProfile);
+
+// Rating
+
+router.post(
+  "/rating",
+  authMiddleware,
+  superAdminMiddleware,
+  verifyToken,
+  addAdminRating
+);
 
 module.exports = router;

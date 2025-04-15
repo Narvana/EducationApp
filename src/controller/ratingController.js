@@ -2,6 +2,7 @@ const Course = require("../models/courses");
 const Rating = require("../models/rating");
 const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
+const AdminRating = require("../models/adminRating");
 
 const addRating = async (req, res) => {
   try {
@@ -66,6 +67,60 @@ const getCourseRatings = async (req, res) => {
   }
 };
 
+
+const addAdminRating = async (req, res) => {
+  try {
+
+    const adminID = req.user.id
+    const { courseID, rating, review } = req.body;
+
+    if (!courseID || !adminID || rating === undefined) {
+      return res
+        .status(400)
+        .json({ message: "Course ID, Admin ID, and rating are required." });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res
+        .status(400)
+        .json({ message: "Rating must be between 1 and 5." });
+    }
+
+    // Check if admin already rated this course
+    const existingRating = await AdminRating.findOne({ courseID, adminID });
+
+    if (existingRating) {
+      return res
+        .status(400)
+        .json({ message: "You have already rated this course." });
+    }
+
+    // Create new admin rating
+    const newRating = new AdminRating({ courseID, adminID, rating, review });
+    await newRating.save();
+
+    // Fetch all ratings from students and admins
+    const studentRatings = await Rating.find({ courseID });
+    const adminRatings = await AdminRating.find({ courseID });
+
+    const totalRatings = [...studentRatings, ...adminRatings];
+    const ratingCount = totalRatings.length;
+    const avgRating =
+      totalRatings.reduce((sum, r) => sum + r.rating, 0) / ratingCount;
+
+    // Update course with new average
+    await Course.findByIdAndUpdate(courseID, {
+      rating: avgRating.toFixed(1),
+      ratingCount,
+    });
+
+    res.status(201).json({ message: "Admin rating added successfully." });
+  } catch (error) {
+    console.error("Error adding admin rating:", error);
+    res.status(500).json({ message: "Internal Server Error", error });
+  }
+};
+
 const getRatingsAll = async (req, res) => {
   try {
     const ratings = await Rating.find()
@@ -94,4 +149,10 @@ const deleteRating = async (req, res) => {
   }
 };
 
-module.exports = { addRating, getCourseRatings, getRatingsAll, deleteRating };
+module.exports = {
+  addRating,
+  getCourseRatings,
+  getRatingsAll,
+  deleteRating,
+  addAdminRating,
+};
