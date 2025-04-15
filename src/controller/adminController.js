@@ -1,6 +1,7 @@
 const Admin = require("../models/admin");
 const Instructor = require("../models/instructor");
 const Course = require("../models/courses");
+const Student = require("../models/courseApplication");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const generateAccessToken = require("../utils/token/generateAccessToken");
@@ -88,19 +89,26 @@ const getInstructors = async (req, res) => {
 
     const instructorWithCourses = await Promise.all(
       instructors.map(async (instructor) => {
-        const courses = await Course.find({
-          instructorID: instructor._id,
-        });
+        const courses = await Course.find({ instructorID: instructor._id });
 
-       
+        // Gather all student counts for each course
+        let studentCount = 0;
+
+        await Promise.all(
+          courses.map(async (course) => {
+            const students = await Student.find({ courseID: course._id });
+            studentCount += students.length;
+          })
+        );
 
         return {
           ...instructor.toObject(),
           courseCount: courses.length,
-          courses
+          studentCount, // ✅ Total students in all courses by this instructor
         };
       })
     );
+
     return res
       .status(200)
       .json(
@@ -111,9 +119,11 @@ const getInstructors = async (req, res) => {
         )
       );
   } catch (error) {
+    console.error("Error fetching instructors:", error);
     res.status(500).json(ApiErrors(500, { error: error.message }));
   }
 };
+
 
 // Login
 const loginAdmin = async (req, res) => {
