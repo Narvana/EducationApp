@@ -40,6 +40,10 @@ const createProfile = async (req, res) => {
 
     await newProfile.save();
 
+    // 👉 Update student document to link the profile
+    student.profile = newProfile._id;
+    await student.save();
+
     res
       .status(201)
       .json(ApiSuccess(201, newProfile, "Profile created successfully"));
@@ -49,30 +53,51 @@ const createProfile = async (req, res) => {
   }
 };
 
+
 // Update existing profile
 const updateProfile = async (req, res) => {
   try {
-    const updatedProfile = await StudentProfile.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+    const { studentID, motherName, fatherName, country, idNumber, courses } =
+      req.body;
 
-    if (!updatedProfile) {
-      return res.status(404).json(ApiErrors(404, "Student profile not found"));
+    // Check if student exists
+    const student = await Student.findById(studentID);
+    if (!student) {
+      return res.status(404).json(ApiErrors(404, "Student not found"));
+    }
+
+    // Check if profile exists
+    const profile = await StudentProfile.findOne({ student: studentID });
+    if (!profile) {
+      return res
+        .status(404)
+        .json(ApiErrors(404, "Profile not found" ));
+    }
+
+    // Update profile fields
+    profile.motherName = motherName || profile.motherName;
+    profile.fatherName = fatherName || profile.fatherName;
+    profile.country = country || profile.country;
+    profile.idNumber = idNumber || profile.idNumber;
+    profile.courses = courses || profile.courses;
+
+    await profile.save();
+
+    // Optional: Ensure student.profile is correctly linked
+    if (!student.profile) {
+      student.profile = profile._id;
+      await student.save();
     }
 
     res
       .status(200)
-      .json(ApiSuccess(200, updatedProfile, "Profile updated successfully"));
+      .json(ApiSuccess(200, profile, "Profile updated successfully"));
   } catch (error) {
     console.error("Error updating profile:", error);
     res.status(500).json(ApiErrors(500, error.message));
   }
 };
+
 
 const getProfileByStudentId = async (req, res) => {
   try {
@@ -118,14 +143,14 @@ const approveStudent = async (req, res) => {
 
 const getUnapprovedProfiles = async (req, res) => {
   try {
-    const students = await Student.find({ isApproved: false });
-    //   .populate("profile") // assuming 'profile' field exists on Student
+    const students = await Student.find({ isApproved: false })
+      .populate("profile") // assuming 'profile' field exists on Student
     // // Optional: Filter only those who have a profile
-    // const result = students.filter((student) => student.profile);
+    const result = students.filter((student) => student.profile);
 
     res
       .status(200)
-      .json(ApiSuccess(200, students, "student profiles fetched successfully"));
+      .json(ApiSuccess(200, result, "student profiles fetched successfully"));
   } catch (error) {
     console.error("Error fetching unapproved profiles:", error);
     res.status(500).json(ApiErrors(500, error.message));

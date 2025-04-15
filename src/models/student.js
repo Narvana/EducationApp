@@ -27,6 +27,12 @@ const StudentSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    profile: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "StudentProfile", // Reference to the Profile model
+      default: null, // Optional: set default to null
+    },
+
     createdAt: {
       type: Date,
       default: Date.now,
