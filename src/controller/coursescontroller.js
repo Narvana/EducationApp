@@ -10,7 +10,7 @@ const CourseApplication = require("../models/courseApplication");
 
 // Create a new course
 const createCourse = async (req, res) => {
-  const { instructorID, name, description, CategoryID, videoTitle, videoType } =
+  const { instructorID, name, description, CategoryID, title, mediaType } =
     req.body;
   const files = req.files || {};
 
@@ -68,13 +68,13 @@ const createCourse = async (req, res) => {
     const media_files = new CourseVideo({
       courseID: course._id,
       courseName: name,
-      title: videoTitle || "Introduction Video",
-      mediaType: videoType || "video",
+      title: title || "Introduction Video",
+      mediaType: mediaType || "video",
       media: videoURI,
       duration: 0, // You might want to calculate this from the video file
     });
 
-    await firstVideo.save();
+    await media_files.save(); 
 
     return res.status(201).json(
       ApiSuccess(
