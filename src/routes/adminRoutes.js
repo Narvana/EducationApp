@@ -145,6 +145,7 @@ router.post(
   authMiddleware,
   upload.fields([
     { name: "thumbnail", maxCount: 1 }, // Single file // Multiple files
+    { name: "media", maxCount: 1 }, // Single file // Multiple files
   ]),
   superAdminMiddleware,
   createCourse

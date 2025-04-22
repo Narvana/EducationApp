@@ -10,7 +10,8 @@ const CourseApplication = require("../models/courseApplication");
 
 // Create a new course
 const createCourse = async (req, res) => {
-  const { instructorID, name, description, CategoryID } = req.body;
+  const { instructorID, name, description, CategoryID, videoTitle, videoType } =
+    req.body;
   const files = req.files || {};
 
   try {
@@ -20,7 +21,6 @@ const createCourse = async (req, res) => {
     }
 
     const courseExists = await Course.findOne({ name });
-
     if (courseExists) {
       return res
         .status(400)
@@ -33,6 +33,13 @@ const createCourse = async (req, res) => {
       return res.status(404).json(ApiErrors(404, "Instructor not found"));
     }
 
+    // Validate required video
+    if (!files.media?.[0]) {
+      return res
+        .status(400)
+        .json(ApiErrors(400, "First video is required for course creation."));
+    }
+
     // Upload thumbnail (required)
     let thumbnailURI = "";
     if (files.thumbnail?.[0]) {
@@ -42,6 +49,9 @@ const createCourse = async (req, res) => {
         .status(400)
         .json(ApiErrors(400, "Thumbnail image is required."));
     }
+
+    // Upload first video
+    const videoURI = await uploadToFirebase(files.media[0]);
 
     // Create course
     const course = new Course({
@@ -53,9 +63,29 @@ const createCourse = async (req, res) => {
     });
 
     await course.save();
-    return res
-      .status(201)
-      .json(ApiSuccess(201, course, "Course created successfully"));
+
+    // Create first video entry
+    const media_files = new CourseVideo({
+      courseID: course._id,
+      courseName: name,
+      title: videoTitle || "Introduction Video",
+      mediaType: videoType || "video",
+      media: videoURI,
+      duration: 0, // You might want to calculate this from the video file
+    });
+
+    await firstVideo.save();
+
+    return res.status(201).json(
+      ApiSuccess(
+        201,
+        {
+          course,
+          media_files,
+        },
+        "Course created successfully with first video"
+      )
+    );
   } catch (error) {
     return res.status(500).json(ApiErrors(500, error.message));
   }
@@ -144,8 +174,7 @@ const getCoursesByCategoryID = async (req, res) => {
     const userID = req.user ? req.user.id : null; // Check if user is logged in
 
     // Fetch all courses in the given category
-    const courses = await Course.find({ CategoryID: req.params.id })
-     
+    const courses = await Course.find({ CategoryID: req.params.id });
 
     // If no courses found
     if (!courses || courses.length === 0) {
@@ -201,7 +230,6 @@ const getCoursesByCategoryID = async (req, res) => {
     return res.status(500).json(ApiErrors(500, error.message));
   }
 };
-
 
 // Update a course by ID
 const updateCourse = async (req, res) => {
