@@ -74,7 +74,7 @@ const createCourse = async (req, res) => {
       duration: 0, // You might want to calculate this from the video file
     });
 
-    await media_files.save(); 
+    await media_files.save();
 
     return res.status(201).json(
       ApiSuccess(
