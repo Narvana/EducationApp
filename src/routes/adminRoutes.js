@@ -74,6 +74,11 @@ const {
   getAllProfile,
 } = require("../controller/studentProfile");
 const verifyToken = require("../middleware/token/verifyToken.js");
+const {
+  createFeeEntry,
+  updateFeeStatus,
+  getEntries,
+} = require("../controller/feeEntry.js");
 
 const router = express.Router();
 
@@ -307,6 +312,24 @@ router.get("/student/fee", getAllStudents);
 
 // Get single student by ID
 router.get("/student/fee/:id", getStudentById);
+
+// FEE ENTRIES
+
+router.post(
+  "/entry/create",
+  authMiddleware,
+  superAdminMiddleware,
+  createFeeEntry
+);
+// router.post("/reminder/manual/:id", controller.sendManualReminder);
+// router.post("/reminder/auto", controller.sendAutoReminders); // You can schedule this
+router.put(
+  "/entry/status/:id",
+  authMiddleware,
+  superAdminMiddleware,
+  updateFeeStatus
+);
+router.get("/entries", getEntries);
 
 // Student Profile
 
