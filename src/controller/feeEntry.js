@@ -99,12 +99,14 @@ const updateFeeStatus = async (req, res) => {
       fee.dueDate = nextDue;
       fee.status = "Paid";
       await fee.save();
-      return res.status(200).json(fee);
+      return res.status(200).json(ApiSuccess(200, fee, "Updated Successfully"));
     }
 
-    return res.status(400).json({ message: "Can only update status to Paid" });
+    return res
+      .status(400)
+      .json(ApiErrors(400, "Can only update status to Paid"));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json(ApiErrors(500, error.message));
   }
 };
 
