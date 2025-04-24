@@ -95,8 +95,8 @@ const createCourse = async (req, res) => {
 const getCourses = async (req, res) => {
   try {
     let courses = await Course.find()
-      .populate("CategoryID", "categoryName") // Fetch category details
-      .populate("instructorID", "name");
+      .populate("CategoryID", "categoryName")
+      .populate("instructorID", "name email");
 
     // Fetch videos for each course
     const courseIDs = courses.map((course) => course._id);
@@ -138,7 +138,10 @@ const getCourses = async (req, res) => {
 const getCourseById = async (req, res) => {
   const { courseID } = req.query;
   try {
-    const course = await Course.findById(courseID);
+    const course = await Course.findById(courseID)
+      .populate("CategoryID", "categoryName")
+      .populate("instructorID", "name email");
+
     if (!course) {
       return res.status(404).json(ApiErrors(404, "Course not found"));
     }
@@ -159,22 +162,21 @@ const getCourseById = async (req, res) => {
 
     res
       .status(200)
-      .json(
-        ApiSuccess(200, coursesWithVideos, "Courses fetched successfully.")
-      );
+      .json(ApiSuccess(200, coursesWithVideos, "Course fetched successfully."));
   } catch (error) {
     return res.status(500).json(ApiErrors(500, error.message));
   }
 };
 
-// Get courses by Catgeory ID
-
+// Get courses by Category ID
 const getCoursesByCategoryID = async (req, res) => {
   try {
-    const userID = req.user ? req.user.id : null; // Check if user is logged in
+    const userID = req.user ? req.user.id : null;
 
     // Fetch all courses in the given category
-    const courses = await Course.find({ CategoryID: req.params.id });
+    const courses = await Course.find({ CategoryID: req.params.id })
+      .populate("CategoryID", "categoryName")
+      .populate("instructorID", "name email");
 
     // If no courses found
     if (!courses || courses.length === 0) {
@@ -193,7 +195,7 @@ const getCoursesByCategoryID = async (req, res) => {
 
       const courseApplications = await CourseApplication.find({
         courseID: { $in: courseIDs },
-        userID: userID, // Only fetch applications for the logged-in user
+        userID: userID,
       }).select("status courseID");
 
       // Map course applications to enrollment status
@@ -218,8 +220,8 @@ const getCoursesByCategoryID = async (req, res) => {
         courseDuration: course.courseDuration,
         CategoryID: course.CategoryID,
         instructorID: course.instructorID,
-        isEnrolled: userID ? enrollmentStatus === "approved" : false, // Only check if user is logged in
-        enrollmentStatus: userID ? enrollmentStatus : "not logged in", // If not logged in, show "not logged in"
+        isEnrolled: userID ? enrollmentStatus === "approved" : false,
+        enrollmentStatus: userID ? enrollmentStatus : "not logged in",
       };
     });
 
@@ -235,7 +237,7 @@ const getCoursesByCategoryID = async (req, res) => {
 const updateCourse = async (req, res) => {
   try {
     const { name, description, CategoryID, instructorID } = req.body;
-    const files = req.files; // Get uploaded files
+    const files = req.files;
 
     const course = await Course.findById(req.params.id);
     if (!course) {
@@ -244,12 +246,12 @@ const updateCourse = async (req, res) => {
         .json(ApiErrors(404, "This course does not exist!"));
     }
 
-    // 🔹 Check if thumbnail is uploaded and update it
+    // Check if thumbnail is uploaded and update it
     if (files?.thumbnail && files.thumbnail[0]) {
-      course.thumbnail = await uploadToFirebase(files.thumbnail[0]); // Fix: Use [0] for single file
+      course.thumbnail = await uploadToFirebase(files.thumbnail[0]);
     }
 
-    // 🔹 Update other course fields
+    // Update other course fields
     if (name) course.name = name;
     if (description) course.description = description;
     if (CategoryID) course.CategoryID = CategoryID;

@@ -153,7 +153,7 @@ const getStudentAttendance = async (req, res) => {
       );
   } catch (error) {
     res.status(500).json(ApiErrors(500, error.message));
-  }
+  } 
 };
 
 // Get attendance for a course

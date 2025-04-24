@@ -21,13 +21,13 @@ const CourseSchema = new Schema(
     },
     CategoryID: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
       ref: "Category",
+      required: true,
     },
     instructorID: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: "instructor",
       required: true,
-      ref: "Instructor",
     },
     isEnrolled: {
       type: Boolean,
