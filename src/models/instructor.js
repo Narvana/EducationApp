@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const InstructorSchema = new Schema(
+const instructorSchema = new Schema(
   {
     name: {
       type: String,
@@ -11,49 +11,28 @@ const InstructorSchema = new Schema(
       type: String,
       required: true,
       unique: true,
-      lowercase: true,
-      trim: true,
-    },
-    occupation: {
-      type: String,
-      required: true,
-    },
-    image: {
-      type: String,
-      required: true,
     },
     password: {
       type: String,
       required: true,
     },
     contact: {
-      type: Number,
-      required: true,
-      unique: true,
-      trim: true,
-    },
-    idProof: {
-      type: String, // Can be a file URL or document number
+      type: String,
       required: true,
     },
     role: {
       type: String,
-      required: false,
+      enum: ["instructor"],
+      default: "instructor",
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
+    isActive: {
+      type: Boolean,
+      default: true,
     },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
-    courses: [{
-      type: mongoose.Schema.Types.ObjectId
-    }]
   },
   { timestamps: true }
 );
 
-const User = mongoose.model("Instructor", InstructorSchema);
-module.exports = User;
+const Instructor = mongoose.model("instructor", instructorSchema);
+
+module.exports = Instructor;

@@ -76,7 +76,7 @@ const updateFeeStatus = async (req, res) => {
       if (today < fiveDaysBefore) {
         return res
           .status(400)
-          .json({ message: "Cannot mark as paid outside of due window." });
+          .json(ApiErrors(400, "Cannot mark as paid outside of due window."));
       }
 
       // Create payment history record
