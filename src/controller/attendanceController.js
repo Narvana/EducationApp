@@ -227,6 +227,7 @@ const updateAttendance = async (req, res) => {
   }
 };
 
+
 // Get attendance statistics
 const getAttendanceStats = async (req, res) => {
   try {
