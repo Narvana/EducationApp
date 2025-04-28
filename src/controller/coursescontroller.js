@@ -139,8 +139,7 @@ const getCourseById = async (req, res) => {
   const { courseID } = req.query;
   try {
     const course = await Course.findById(courseID)
-      .populate("CategoryID", "categoryName")
-      .populate("instructorID", "name email");
+    
 
     if (!course) {
       return res.status(404).json(ApiErrors(404, "Course not found"));
