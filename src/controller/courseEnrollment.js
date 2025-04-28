@@ -5,7 +5,8 @@ const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 
 const enrollCourse = async (req, res) => {
   //Enroll a student in a course
-  const { userID, courseID } = req.body;
+  const { courseID } = req.body;
+  const userID = req.user.id;
   try {
     const applicationExists = await CourseApplication.findOne({
       userID,

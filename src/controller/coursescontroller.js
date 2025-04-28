@@ -139,7 +139,39 @@ const getCourseById = async (req, res) => {
   const { courseID } = req.query;
   try {
     const course = await Course.findById(courseID)
-    
+     
+
+    if (!course) {
+      return res.status(404).json(ApiErrors(404, "Course not found"));
+    }
+
+    const videos = await CourseVideo.find({ courseID });
+    console.log("Videos from database", videos);
+
+    const totalDuration = () =>
+      videos?.map((v) => v.duration).reduce((a, b) => a + b, 0);
+
+    // Attach videos to their respective courses
+    const coursesWithVideos = {
+      ...course?.toObject(),
+      mediaCount: videos?.length,
+      courseDuration: totalDuration(),
+      media_files: videos,
+    };
+
+    res
+      .status(200)
+      .json(ApiSuccess(200, coursesWithVideos, "Course fetched successfully."));
+  } catch (error) {
+    return res.status(500).json(ApiErrors(500, error.message));
+  }
+};
+const getCourseByIdAdmin = async (req, res) => {
+  const { courseID } = req.query;
+  try {
+    const course = await Course.findById(courseID)
+      .populate("CategoryID", "categoryName")
+      .populate("instructorID", "name email");
 
     if (!course) {
       return res.status(404).json(ApiErrors(404, "Course not found"));
@@ -287,4 +319,5 @@ module.exports = {
   getCourses,
   deleteCourse,
   getCoursesByCategoryID,
+  getCourseByIdAdmin,
 };

@@ -6,6 +6,7 @@ const {
   getCourseById,
   deleteCourse,
   updateCourse,
+  getCourseByIdAdmin,
 } = require("../controller/coursescontroller");
 const {
   registerSuperAdmin,
@@ -155,7 +156,7 @@ router.post(
 router.get("/courses/get", getCourses);
 
 // Get a single course by ID
-router.get("/courses/get", getCourseById);
+router.get("/courses/get", getCourseByIdAdmin);
 
 // Update a course by ID
 router.put(

@@ -53,7 +53,7 @@ router.get("/ratings", getCourseRatings);
 router.get("/home", authMiddleware, verifyToken, homePage);
 
 // Enrolled Courses for students
-router.post("/enrolledCourses", authMiddleware, enrollCourse);
+router.post("/enrolledCourses", authMiddleware, verifyToken, enrollCourse);
 
 // Recently Watched Courses for students
 router.post(
