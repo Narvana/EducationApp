@@ -173,19 +173,16 @@ const getCoursesByCategoryID = async (req, res) => {
   try {
     const userID = req.user ? req.user.id : null;
 
+    // Check if category exists
+    const categoryExists = await Category.findById(req.params.id);
+    if (!categoryExists) {
+      return res.status(404).json(ApiErrors(404, "Category does not exist"));
+    }
+
     // Fetch all courses in the given category
-    const courses = await Course.find({ CategoryID: req.params.id })
-      .populate("CategoryID", "categoryName")
-      .populate("instructorID", "name email");
+    const courses = await Course.find({ CategoryID: req.params.id });
 
     // If no courses found
-    if (!courses || courses.length === 0) {
-      return res
-        .status(404)
-        .json(
-          ApiErrors(404, "There are no courses available in this category")
-        );
-    }
 
     let enrollmentMap = {};
 
