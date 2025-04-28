@@ -121,7 +121,7 @@ const getCoursesbyStudentID = async (req, res) => {
     const courses = await CourseApplication.find({
       userID: id,
       status: "Approved",
-    });
+    }).populate("courseID");
 
     if (!courses) {
       return res
