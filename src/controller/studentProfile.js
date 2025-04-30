@@ -50,7 +50,7 @@ const createProfile = async (req, res) => {
         const application = new CourseApplication({
           userID: studentID,
           courseID: course._id,
-          status: "Approved",
+          status: "pending",
         });
         await application.save();
       }

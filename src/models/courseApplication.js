@@ -15,7 +15,7 @@ const CourseApplicationSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "approved", "declined"],
+      enum: ["pending", "Approved", "declined"],
       default: "pending",
     },
   },
