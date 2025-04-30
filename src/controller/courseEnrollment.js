@@ -121,17 +121,30 @@ const getCoursesbyStudentID = async (req, res) => {
     const courses = await CourseApplication.find({
       userID: id,
       status: "Approved",
-    }).populate("courseID");
+    }).populate({
+      path: "courseID",
+      populate: {
+        path: "CategoryID",
+        select: "categoryName",
+      },
+    });
 
-    if (!courses) {
+    if (!courses || courses.length === 0) {
       return res
         .status(404)
         .json(ApiErrors(404, "This student is not enrolled in any courses."));
     }
 
+    // Transform the data to include isEnrolled and other necessary fields
+    const formattedCourses = courses.map((course) => ({
+      ...course.courseID.toObject(),
+      isEnrolled: true,
+      enrollmentStatus: "Approved",
+    }));
+
     res
       .status(200)
-      .json(ApiSuccess(200, courses, "Courses fetched successfully"));
+      .json(ApiSuccess(200, formattedCourses, "Courses fetched successfully"));
   } catch (error) {
     res.status(500).json(ApiErrors(500, error.message));
   }

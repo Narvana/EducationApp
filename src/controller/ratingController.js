@@ -14,7 +14,9 @@ const addRating = async (req, res) => {
         .json({ message: "Course ID, User ID, and rating are required." });
     }
 
-    if (rating < 1 || rating > 5) {
+    // Convert rating to integer and validate
+    const ratingInt = Math.round(Number(rating));
+    if (ratingInt < 1 || ratingInt > 5) {
       return res
         .status(400)
         .json({ message: "Rating must be between 1 and 5." });
@@ -29,18 +31,24 @@ const addRating = async (req, res) => {
         .json({ message: "You have already rated this course." });
     }
 
-    // Create new rating
-    const newRating = new Rating({ courseID, studentID, rating, review });
+    // Create new rating with integer value
+    const newRating = new Rating({
+      courseID,
+      studentID,
+      rating: ratingInt,
+      review,
+    });
     await newRating.save();
 
     // Update course rating
     const ratings = await Rating.find({ courseID });
     const ratingCount = ratings.length;
-    const avgRating =
-      ratings.reduce((sum, r) => sum + r.rating, 0) / ratingCount;
+    const avgRating = Math.round(
+      ratings.reduce((sum, r) => sum + r.rating, 0) / ratingCount
+    );
 
     await Course.findByIdAndUpdate(courseID, {
-      rating: avgRating.toFixed(1),
+      rating: avgRating,
       ratingCount,
     });
 
@@ -67,11 +75,9 @@ const getCourseRatings = async (req, res) => {
   }
 };
 
-
 const addAdminRating = async (req, res) => {
   try {
-
-    const adminID = req.user.id
+    const adminID = req.user.id;
     const { courseID, rating, review } = req.body;
 
     if (!courseID || !adminID || rating === undefined) {
@@ -80,7 +86,9 @@ const addAdminRating = async (req, res) => {
         .json({ message: "Course ID, Admin ID, and rating are required." });
     }
 
-    if (rating < 1 || rating > 5) {
+    // Convert rating to integer and validate
+    const ratingInt = Math.round(Number(rating));
+    if (ratingInt < 1 || ratingInt > 5) {
       return res
         .status(400)
         .json({ message: "Rating must be between 1 and 5." });
@@ -95,8 +103,13 @@ const addAdminRating = async (req, res) => {
         .json({ message: "You have already rated this course." });
     }
 
-    // Create new admin rating
-    const newRating = new AdminRating({ courseID, adminID, rating, review });
+    // Create new admin rating with integer value
+    const newRating = new AdminRating({
+      courseID,
+      adminID,
+      rating: ratingInt,
+      review,
+    });
     await newRating.save();
 
     // Fetch all ratings from students and admins
@@ -105,12 +118,13 @@ const addAdminRating = async (req, res) => {
 
     const totalRatings = [...studentRatings, ...adminRatings];
     const ratingCount = totalRatings.length;
-    const avgRating =
-      totalRatings.reduce((sum, r) => sum + r.rating, 0) / ratingCount;
+    const avgRating = Math.round(
+      totalRatings.reduce((sum, r) => sum + r.rating, 0) / ratingCount
+    );
 
-    // Update course with new average
+    // Update course with new integer average
     await Course.findByIdAndUpdate(courseID, {
-      rating: avgRating.toFixed(1),
+      rating: avgRating,
       ratingCount,
     });
 

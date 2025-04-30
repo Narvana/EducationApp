@@ -2,6 +2,8 @@ const Attendance = require("../models/attendance");
 const Instructor = require("../models/instructor");
 const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
+const Student = require("../models/student");
+const CourseApplication = require("../models/courseApplication");
 
 // Helper function to get class day
 const getClassDay = (date) => {
@@ -130,10 +132,146 @@ const markBulkAttendance = async (req, res) => {
 // Get attendance for a student
 const getStudentAttendance = async (req, res) => {
   try {
-    const { studentId, courseId, startDate, endDate } = req.query;
-    const query = { studentId };
+    const { studentId, startDate, endDate } = req.query;
+    const query = {};
 
-    if (courseId) query.courseId = courseId;
+    // If no studentId is provided, show all students with current date's attendance
+    if (!studentId) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      // Get all students
+      const allStudents = await Student.find().select("_id name").lean();
+
+      // Get enrolled courses for each student
+      const studentEnrollments = await CourseApplication.find({
+        userID: { $in: allStudents.map((s) => s._id) },
+        status: "approved",
+      }).populate({
+        path: "courseID",
+        select: "_id name",
+        model: "Course",
+      });
+
+      // First get all students who have attendance marked for today
+      const existingAttendance = await Attendance.find({
+        date: {
+          $gte: today,
+          $lt: tomorrow,
+        },
+      })
+        .populate("studentId", "name")
+        .populate("courseId", "name");
+
+      // Create a map of existing attendance
+      const attendanceMap = new Map();
+      existingAttendance.forEach((att) => {
+        const key = `${att.studentId._id.toString()}-${
+          att.courseId?._id.toString() || "no-course"
+        }`;
+        attendanceMap.set(key, att);
+      });
+
+      // Create a map of student enrollments
+      const enrollmentMap = new Map();
+      studentEnrollments.forEach((enrollment) => {
+        const studentId = enrollment.userID.toString();
+        if (!enrollmentMap.has(studentId)) {
+          enrollmentMap.set(studentId, []);
+        }
+        if (enrollment.courseID) {
+          enrollmentMap.get(studentId).push(enrollment.courseID);
+        }
+      });
+
+      // Combine existing attendance with default absent status for students without attendance
+      const combinedAttendance = [];
+      allStudents.forEach((student) => {
+        const studentId = student._id.toString();
+        const enrolledCourses = enrollmentMap.get(studentId) || [];
+
+        if (enrolledCourses.length === 0) {
+          // If student is not enrolled in any course, create a single entry
+          const existingRecord = attendanceMap.get(`${studentId}-no-course`);
+          if (existingRecord) {
+            combinedAttendance.push(existingRecord);
+          } else {
+            combinedAttendance.push({
+              studentId: student,
+              status: "Absent",
+              date: today,
+              courseId: null,
+              markedBy: null,
+              classDay: getClassDay(today),
+            });
+          }
+        } else {
+          // Create entries for each enrolled course
+          enrolledCourses.forEach((course) => {
+            if (!course || !course._id) return; // Skip if course is invalid
+
+            const existingRecord = attendanceMap.get(
+              `${studentId}-${course._id}`
+            );
+            if (existingRecord) {
+              combinedAttendance.push(existingRecord);
+            } else {
+              combinedAttendance.push({
+                studentId: student,
+                status: "Absent",
+                date: today,
+                courseId: course,
+                markedBy: null,
+                classDay: getClassDay(today),
+              });
+            }
+          });
+        }
+      });
+
+      return res
+        .status(200)
+        .json(
+          ApiSuccess(
+            200,
+            combinedAttendance,
+            "Attendance records fetched successfully"
+          )
+        );
+    }
+
+    // If studentId is provided, get their enrolled courses first
+    const enrolledCourses = await CourseApplication.find({
+      userID: studentId,
+      status: "approved",
+    }).populate({
+      path: "courseID",
+      select: "_id name",
+      model: "Course",
+    });
+
+    if (enrolledCourses.length === 0) {
+      return res
+        .status(404)
+        .json(ApiErrors(404, "Student is not enrolled in any courses"));
+    }
+
+    // Get attendance for each enrolled course
+    const courseIds = enrolledCourses
+      .filter((enrollment) => enrollment.courseID && enrollment.courseID._id)
+      .map((enrollment) => enrollment.courseID._id);
+
+    if (courseIds.length === 0) {
+      return res
+        .status(404)
+        .json(ApiErrors(404, "No valid courses found for student"));
+    }
+
+    query.studentId = studentId;
+    query.courseId = { $in: courseIds };
+
     if (startDate && endDate) {
       query.date = {
         $gte: new Date(startDate),
@@ -144,6 +282,7 @@ const getStudentAttendance = async (req, res) => {
     const attendance = await Attendance.find(query)
       .populate("courseId", "name")
       .populate("markedBy", "name email")
+      .populate("studentId", "name")
       .sort({ date: -1 });
 
     res
@@ -153,7 +292,7 @@ const getStudentAttendance = async (req, res) => {
       );
   } catch (error) {
     res.status(500).json(ApiErrors(500, error.message));
-  } 
+  }
 };
 
 // Get attendance for a course
@@ -226,7 +365,6 @@ const updateAttendance = async (req, res) => {
     res.status(500).json(ApiErrors(500, error.message));
   }
 };
-
 
 // Get attendance statistics
 const getAttendanceStats = async (req, res) => {

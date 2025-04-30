@@ -19,6 +19,8 @@ const RatingSchema = new Schema(
       required: true,
       min: 1,
       max: 5,
+      get: (v) => Math.round(v),
+      set: (v) => Math.round(v),
     },
     review: {
       type: String,

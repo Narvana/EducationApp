@@ -137,12 +137,35 @@ const getCourses = async (req, res) => {
 // Get a single course by ID
 const getCourseById = async (req, res) => {
   const { courseID } = req.query;
+  const userID = req.user?.id;
   try {
-    const course = await Course.findById(courseID)
-     
+    const course = await Course.findById(courseID);
 
     if (!course) {
       return res.status(404).json(ApiErrors(404, "Course not found"));
+    }
+
+    // Check if student is enrolled
+    let isEnrolled = false;
+    let enrollmentStatus = "not logged in";
+
+    if (userID) {
+      const enrollment = await CourseApplication.findOne({
+        userID,
+        courseID,
+      });
+
+      if (enrollment) {
+        if (enrollment.status === "Approved") {
+          isEnrolled = true;
+          enrollmentStatus = "Approved";
+        } else {
+          isEnrolled = false;
+          enrollmentStatus = "Pending";
+        }
+      } else {
+        enrollmentStatus = "Not Applied";
+      }
     }
 
     const videos = await CourseVideo.find({ courseID });
@@ -157,6 +180,8 @@ const getCourseById = async (req, res) => {
       mediaCount: videos?.length,
       courseDuration: totalDuration(),
       media_files: videos,
+      isEnrolled,
+      enrollmentStatus,
     };
 
     res

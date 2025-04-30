@@ -36,7 +36,7 @@ router.get("/courses/categoryid=:id", authMiddleware, getCoursesByCategoryID);
 
 router.get("/teachers", getInstructor);
 
-router.get("/course", getCourseById);
+router.get("/course", authMiddleware, verifyToken, getCourseById);
 
 router.get("/courses/media/:courseID", getVideosByCourseID);
 

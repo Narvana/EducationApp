@@ -24,7 +24,7 @@ const feeEntrySchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["Paid", "Due", "Overdue"],
+      enum: ["Paid", "Due", "Overdue", "Advance"],
       default: "Due",
     },
     // autoReminderSent: {
