@@ -54,7 +54,7 @@ const homePage = async (req, res) => {
         CategoryID: course.CategoryID,
         instructorID: course.instructorID,
         mediaCount: course.mediaCount,
-        rating: course.rating,
+        rating: Math.round(course.rating),
         ratingCount: course.ratingCount,
         createdAt: course.createdAt,
       })),
@@ -66,7 +66,7 @@ const homePage = async (req, res) => {
         CategoryID: course.CategoryID,
         instructorID: course.instructorID,
         mediaCount: course.mediaCount,
-        rating: course.rating,
+        rating: Math.round(course.rating),
         ratingCount: course.ratingCount,
         createdAt: course.createdAt,
       })),
@@ -76,12 +76,21 @@ const homePage = async (req, res) => {
         image: category.image,
       })),
       recentlyWatched,
-      streak: streakData || {
-        streak: 0,
-        todayProgress: 0,
-        secondsLeft: 3600,
-        secondsWatchedToday: 0,
-      },
+      streak: streakData
+        ? {
+            streak: streakData.streak,
+            todayProgress: Math.round(streakData.secondsWatchedToday / 60), // Convert to minutes
+            minutesLeft: Math.round(streakData.secondsLeft / 60), // Convert to minutes
+            minutesWatchedToday: Math.round(
+              streakData.secondsWatchedToday / 60
+            ), // Convert to minutes
+          }
+        : {
+            streak: 0,
+            todayProgress: 0,
+            minutesLeft: 60, // 60 minutes = 1 hour
+            minutesWatchedToday: 0,
+          },
     };
 
     res
