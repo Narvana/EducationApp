@@ -86,8 +86,8 @@ const getProfileByStudentId = async (req, res) => {
     const profile = await StudentProfile.findOne({
       student: id,
     })
-      .populate("student")
-      .populate("courses", "name");
+      .populate("student", "-password -role -createdAt -updatedAt -isApproved -__v -profile")
+      .populate("categories", "categoryName");
 
     if (!profile) {
       return res.status(404).json(ApiErrors(404, "Profile not found"));
