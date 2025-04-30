@@ -159,11 +159,15 @@ const getCourseById = async (req, res) => {
         if (enrollment.status === "Approved") {
           isEnrolled = true;
           enrollmentStatus = "Approved";
-        } else {
+        } else if (enrollment.status === "pending") {
           isEnrolled = false;
           enrollmentStatus = "Pending";
+        } else if (enrollment.status === "declined") {
+          isEnrolled = false;
+          enrollmentStatus = "Declined";
         }
       } else {
+        isEnrolled = false;
         enrollmentStatus = "Not Applied";
       }
     }
