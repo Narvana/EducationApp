@@ -4,12 +4,25 @@ const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const generateAccessToken = require("../utils/token/generateAccessToken");
+const validatePassword = require("../utils/passwordValidation");
 
 // Create Student
 
 const createStudent = async (req, res) => {
   const { name, email, password, contact } = req.body;
   try {
+    // Validate password
+    if (!validatePassword(password)) {
+      return res
+        .status(400)
+        .json(
+          ApiErrors(
+            400,
+            "Password must be 8-15 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character."
+          )
+        );
+    }
+
     const studentExists = await Student.findOne({ email });
     if (studentExists) {
       return res
@@ -34,7 +47,7 @@ const createStudent = async (req, res) => {
       .status(201)
       .json(
         ApiSuccess(
-          200,
+          201,
           student,
           "Student account has been created successfully"
         )

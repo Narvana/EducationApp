@@ -156,7 +156,7 @@ const getAllProfile = async (req, res) => {
   try {
     const students = await StudentProfile.find()
       .populate("student")
-      .populate("courses", "name");
+      .populate("categories", "CategoryName");
     res
       .status(200)
       .json(ApiSuccess(200, students, "Students profile fetched successfully"));

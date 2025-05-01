@@ -20,15 +20,14 @@ const attendanceSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["Present", "Absent", "postponed"],
+      enum: ["Present", "Absent", "Late", "Excused", "Postponed"],
       default: "Present",
     },
     markedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "instructor",
-      // required: true,
+      required: true,
     },
-
     classDay: {
       type: String,
       enum: [
@@ -54,6 +53,22 @@ const attendanceSchema = new Schema(
         "Saturday",
       ],
       required: true,
+    },
+    startTime: {
+      type: String,
+      required: true,
+    },
+    endTime: {
+      type: String,
+      required: true,
+    },
+    remarks: {
+      type: String,
+      trim: true,
+    },
+    markedAt: {
+      type: Date,
+      default: Date.now,
     },
   },
   { timestamps: true }

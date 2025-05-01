@@ -54,7 +54,7 @@ const addRating = async (req, res) => {
 
     res.status(201).json({ message: "Rating added successfully." });
   } catch (error) {
-    res.status(500).json({ message: "Internal Server Error", error });
+    res.status(500).json(ApiErrors(500, error.message));
   }
 };
 
@@ -131,7 +131,7 @@ const addAdminRating = async (req, res) => {
     res.status(201).json({ message: "Admin rating added successfully." });
   } catch (error) {
     console.error("Error adding admin rating:", error);
-    res.status(500).json({ message: "Internal Server Error", error });
+    res.status(500).json(ApiErrors(500, error.message));
   }
 };
 

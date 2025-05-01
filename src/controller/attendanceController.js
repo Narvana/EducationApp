@@ -4,6 +4,7 @@ const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 const Student = require("../models/student");
 const CourseApplication = require("../models/courseApplication");
+const mongoose = require("mongoose");
 
 // Helper function to get class day
 const getClassDay = (date) => {
@@ -19,7 +20,7 @@ const getClassDay = (date) => {
   return days[date.getDay()];
 };
 
-// Validate if the current day is in the student's schedule
+// Validate if the current day is in the schedule
 const validateSchedule = (currentDay, schedule) => {
   if (!schedule.includes(currentDay)) {
     throw new Error(
@@ -28,14 +29,62 @@ const validateSchedule = (currentDay, schedule) => {
   }
 };
 
+// Validate student enrollment
+const validateEnrollment = async (studentId, courseId) => {
+  const enrollment = await CourseApplication.findOne({
+    userID: studentId,
+    courseID: courseId,
+    status: "Approved",
+  });
+  if (!enrollment) {
+    throw new Error("Student is not enrolled in this course");
+  }
+  return enrollment;
+};
+
+// Validate instructor assignment
+const validateInstructor = async (instructorId, courseId) => {
+  const instructor = await Instructor.findOne({
+    _id: instructorId,
+    assignedCourses: courseId,
+  });
+  if (!instructor) {
+    throw new Error("Instructor is not assigned to this course");
+  }
+  return instructor;
+};
+
+// Validate time format
+const validateTimeFormat = (time) => {
+  const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+  if (!timeRegex.test(time)) {
+    throw new Error("Invalid time format. Use HH:mm format");
+  }
+};
+
 // Mark attendance for a single student
 const markAttendance = async (req, res) => {
   try {
-    const { studentId, courseId, status, schedule, attendanceDate } = req.body;
+    const {
+      studentId,
+      courseId,
+      status,
+      schedule,
+      startTime,
+      endTime,
+      remarks,
+      attendanceDate,
+    } = req.body;
     const markedBy = req.userID;
 
-    // Use provided date or current date
+    // Validate future dates
     const date = attendanceDate ? new Date(attendanceDate) : new Date();
+    if (date > new Date()) {
+      return res
+        .status(400)
+        .json(ApiErrors(400, "Cannot mark attendance for future dates"));
+    }
+
     const classDay = getClassDay(date);
 
     // Validate schedule
@@ -46,9 +95,17 @@ const markAttendance = async (req, res) => {
           ApiErrors(400, "Schedule must be provided with at least one day")
         );
     }
-
-    // Validate if the day is in schedule
     validateSchedule(classDay, schedule);
+
+    // Validate time format
+    validateTimeFormat(startTime);
+    validateTimeFormat(endTime);
+
+    // Validate enrollment
+    await validateEnrollment(studentId, courseId);
+
+    // Validate instructor
+    await validateInstructor(markedBy, courseId);
 
     const attendance = new Attendance({
       studentId,
@@ -58,6 +115,9 @@ const markAttendance = async (req, res) => {
       date,
       classDay,
       schedule,
+      startTime,
+      endTime,
+      remarks,
     });
 
     await attendance.save();
@@ -81,12 +141,28 @@ const markAttendance = async (req, res) => {
 
 // Mark attendance for multiple students
 const markBulkAttendance = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const { courseId, attendanceList, schedule, attendanceDate } = req.body;
+    const {
+      courseId,
+      attendanceList,
+      schedule,
+      startTime,
+      endTime,
+      attendanceDate,
+    } = req.body;
     const markedBy = req.userID;
 
-    // Use provided date or current date
+    // Validate future dates
     const date = attendanceDate ? new Date(attendanceDate) : new Date();
+    if (date > new Date()) {
+      return res
+        .status(400)
+        .json(ApiErrors(400, "Cannot mark attendance for future dates"));
+    }
+
     const classDay = getClassDay(date);
 
     // Validate schedule
@@ -97,9 +173,26 @@ const markBulkAttendance = async (req, res) => {
           ApiErrors(400, "Schedule must be provided with at least one day")
         );
     }
-
-    // Validate if the day is in schedule
     validateSchedule(classDay, schedule);
+
+    // Validate time format
+    validateTimeFormat(startTime);
+    validateTimeFormat(endTime);
+
+    // Validate instructor
+    await validateInstructor(markedBy, courseId);
+
+    // Validate all students are enrolled
+    const studentIds = attendanceList.map((record) => record.studentId);
+    const enrollments = await CourseApplication.find({
+      userID: { $in: studentIds },
+      courseID: courseId,
+      status: "Approved",
+    });
+
+    if (enrollments.length !== studentIds.length) {
+      throw new Error("Some students are not enrolled in this course");
+    }
 
     const attendanceRecords = attendanceList.map((record) => ({
       studentId: record.studentId,
@@ -109,23 +202,32 @@ const markBulkAttendance = async (req, res) => {
       date,
       classDay,
       schedule,
+      startTime,
+      endTime,
+      remarks: record.remarks,
     }));
 
     const savedRecords = await Attendance.insertMany(attendanceRecords, {
+      session,
       ordered: false,
     });
+
+    await session.commitTransaction();
     res
       .status(201)
       .json(
         ApiSuccess(201, savedRecords, "Bulk attendance marked successfully")
       );
   } catch (error) {
+    await session.abortTransaction();
     if (error.code === 11000) {
       return res
         .status(400)
         .json(ApiErrors(400, "Some attendance records already exist"));
     }
     res.status(500).json(ApiErrors(500, error.message));
+  } finally {
+    session.endSession();
   }
 };
 
