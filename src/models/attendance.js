@@ -54,18 +54,8 @@ const attendanceSchema = new Schema(
       ],
       required: true,
     },
-    startTime: {
-      type: String,
-      required: true,
-    },
-    endTime: {
-      type: String,
-      required: true,
-    },
-    remarks: {
-      type: String,
-      trim: true,
-    },
+   
+  
     markedAt: {
       type: Date,
       default: Date.now,

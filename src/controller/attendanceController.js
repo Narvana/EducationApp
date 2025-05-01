@@ -4,6 +4,7 @@ const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 const Student = require("../models/student");
 const CourseApplication = require("../models/courseApplication");
+const Admin = require("../models/admin");
 const mongoose = require("mongoose");
 
 // Helper function to get class day
@@ -49,9 +50,11 @@ const validateInstructor = async (instructorId, courseId) => {
     assignedCourses: courseId,
   });
   if (!instructor) {
-    throw new Error("Instructor is not assigned to this course");
+    return "Admin";
+  } else {
+    return instructor;
   }
-  return instructor;
+  return;
 };
 
 // Validate time format
@@ -65,17 +68,8 @@ const validateTimeFormat = (time) => {
 // Mark attendance for a single student
 const markAttendance = async (req, res) => {
   try {
-    const {
-      studentId,
-      courseId,
-      status,
-      schedule,
-      startTime,
-      endTime,
-      remarks,
-      attendanceDate,
-    } = req.body;
-    const markedBy = req.userID;
+    const { studentId, courseId, status, schedule, attendanceDate } = req.body;
+    const markedBy = req.user.id;
 
     // Validate future dates
     const date = attendanceDate ? new Date(attendanceDate) : new Date();
@@ -87,19 +81,27 @@ const markAttendance = async (req, res) => {
 
     const classDay = getClassDay(date);
 
-    // Validate schedule
-    if (!schedule || !Array.isArray(schedule) || schedule.length === 0) {
-      return res
-        .status(400)
-        .json(
-          ApiErrors(400, "Schedule must be provided with at least one day")
-        );
-    }
-    validateSchedule(classDay, schedule);
+    // Check if attendance already exists for this course on this date
+    const existingAttendance = await Attendance.findOne({
+      courseId,
+      studentId,
+      // date: {
+      //   $gte: new Date(date.setHours(0, 0, 0, 0)),
+      //   $lt: new Date(date.setHours(23, 59, 59, 999)),
+      // },
+    });
 
-    // Validate time format
-    validateTimeFormat(startTime);
-    validateTimeFormat(endTime);
+    // Only validate schedule if this is the first attendance record for the course on this date
+    if (!existingAttendance) {
+      if (!schedule || !Array.isArray(schedule) || schedule.length === 0) {
+        return res
+          .status(400)
+          .json(
+            ApiErrors(400, "Schedule must be provided with at least one day")
+          );
+      }
+      validateSchedule(classDay, schedule);
+    }
 
     // Validate enrollment
     await validateEnrollment(studentId, courseId);
@@ -114,10 +116,7 @@ const markAttendance = async (req, res) => {
       markedBy,
       date,
       classDay,
-      schedule,
-      startTime,
-      endTime,
-      remarks,
+      schedule: existingAttendance ? existingAttendance.schedule : schedule,
     });
 
     await attendance.save();
@@ -153,7 +152,7 @@ const markBulkAttendance = async (req, res) => {
       endTime,
       attendanceDate,
     } = req.body;
-    const markedBy = req.userID;
+    const markedBy = req.user.id;
 
     // Validate future dates
     const date = attendanceDate ? new Date(attendanceDate) : new Date();
@@ -165,15 +164,26 @@ const markBulkAttendance = async (req, res) => {
 
     const classDay = getClassDay(date);
 
-    // Validate schedule
-    if (!schedule || !Array.isArray(schedule) || schedule.length === 0) {
-      return res
-        .status(400)
-        .json(
-          ApiErrors(400, "Schedule must be provided with at least one day")
-        );
+    // Check if attendance already exists for this course on this date
+    const existingAttendance = await Attendance.findOne({
+      courseId,
+      date: {
+        $gte: new Date(date.setHours(0, 0, 0, 0)),
+        $lt: new Date(date.setHours(23, 59, 59, 999)),
+      },
+    });
+
+    // Only validate schedule if this is the first attendance record for the course on this date
+    if (!existingAttendance) {
+      if (!schedule || !Array.isArray(schedule) || schedule.length === 0) {
+        return res
+          .status(400)
+          .json(
+            ApiErrors(400, "Schedule must be provided with at least one day")
+          );
+      }
+      validateSchedule(classDay, schedule);
     }
-    validateSchedule(classDay, schedule);
 
     // Validate time format
     validateTimeFormat(startTime);
@@ -201,10 +211,7 @@ const markBulkAttendance = async (req, res) => {
       markedBy,
       date,
       classDay,
-      schedule,
-      startTime,
-      endTime,
-      remarks: record.remarks,
+      schedule: existingAttendance ? existingAttendance.schedule : schedule,
     }));
 
     const savedRecords = await Attendance.insertMany(attendanceRecords, {
@@ -234,7 +241,7 @@ const markBulkAttendance = async (req, res) => {
 // Get attendance for a student
 const getStudentAttendance = async (req, res) => {
   try {
-    const { studentId, startDate, endDate } = req.query;
+    const { studentId } = req.query;
     const query = {};
 
     // If no studentId is provided, show all students with current date's attendance
@@ -250,14 +257,14 @@ const getStudentAttendance = async (req, res) => {
       // Get enrolled courses for each student
       const studentEnrollments = await CourseApplication.find({
         userID: { $in: allStudents.map((s) => s._id) },
-        status: "approved",
+        status: { $regex: new RegExp("^approved$", "i") },
       }).populate({
         path: "courseID",
         select: "_id name",
         model: "Course",
       });
 
-      // First get all students who have attendance marked for today
+      // Get today's attendance
       const existingAttendance = await Attendance.find({
         date: {
           $gte: today,
@@ -265,7 +272,9 @@ const getStudentAttendance = async (req, res) => {
         },
       })
         .populate("studentId", "name")
-        .populate("courseId", "name");
+        .populate("courseId", "name")
+        // .populate("markedBy", "name email role")
+        .lean();
 
       // Create a map of existing attendance
       const attendanceMap = new Map();
@@ -288,6 +297,26 @@ const getStudentAttendance = async (req, res) => {
         }
       });
 
+      // Get the current user (admin/instructor) who is viewing the attendance
+      console.log(req.user.id);
+      
+      let currentUser = await Instructor.findOne({ _id: req.user.id });
+
+      console.log("Current USer", currentUser);
+
+      if (!currentUser) {
+        currentUser = await Admin.findOne(req.user.id).select("email").lean();
+      }
+
+      // If still no user found, use a default admin
+      if (!currentUser) {
+        currentUser = {
+          _id: "000000000000000000000000", // Default admin ID
+          name: "System Admin",
+          email: "admin@system.com",
+        };
+      }
+
       // Combine existing attendance with default absent status for students without attendance
       const combinedAttendance = [];
       allStudents.forEach((student) => {
@@ -305,7 +334,7 @@ const getStudentAttendance = async (req, res) => {
               status: "Absent",
               date: today,
               courseId: null,
-              markedBy: null,
+              markedBy: req.user.id,
               classDay: getClassDay(today),
             });
           }
@@ -325,7 +354,7 @@ const getStudentAttendance = async (req, res) => {
                 status: "Absent",
                 date: today,
                 courseId: course,
-                markedBy: null,
+                markedBy: currentUser,
                 classDay: getClassDay(today),
               });
             }
@@ -347,7 +376,7 @@ const getStudentAttendance = async (req, res) => {
     // If studentId is provided, get their enrolled courses first
     const enrolledCourses = await CourseApplication.find({
       userID: studentId,
-      status: "approved",
+      status: { $regex: new RegExp("^approved$", "i") },
     }).populate({
       path: "courseID",
       select: "_id name",
@@ -374,16 +403,9 @@ const getStudentAttendance = async (req, res) => {
     query.studentId = studentId;
     query.courseId = { $in: courseIds };
 
-    if (startDate && endDate) {
-      query.date = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate),
-      };
-    }
-
     const attendance = await Attendance.find(query)
       .populate("courseId", "name")
-      .populate("markedBy", "name email")
+      .populate("markedBy", "name email role")
       .populate("studentId", "name")
       .sort({ date: -1 });
 
@@ -409,19 +431,63 @@ const getCourseAttendance = async (req, res) => {
       const endDate = new Date(date);
       endDate.setHours(23, 59, 59, 999);
       query.date = { $gte: startDate, $lte: endDate };
+    } else {
+      // If no date provided, get today's attendance
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      query.date = { $gte: today, $lt: tomorrow };
     }
 
+    // Get all enrolled students for the course
+    const enrolledStudents = await CourseApplication.find({
+      courseID: courseId,
+      status: "Approved",
+    }).populate({
+      path: "userID",
+      select: "_id name",
+      model: "Student",
+    });
+
+    // Get attendance records
     const attendance = await Attendance.find(query)
       .populate("studentId", "name")
       .populate("markedBy", "name email")
-      .sort({ date: -1 });
+      .sort({ date: -1 })
+      .lean();
+
+    // Create a map of existing attendance
+    const attendanceMap = new Map();
+    attendance.forEach((att) => {
+      attendanceMap.set(att.studentId._id.toString(), att);
+    });
+
+    // Combine existing attendance with default absent status for students without attendance
+    const combinedAttendance = enrolledStudents.map((enrollment) => {
+      const studentId = enrollment.userID._id.toString();
+      const existingRecord = attendanceMap.get(studentId);
+
+      if (existingRecord) {
+        return existingRecord;
+      }
+
+      return {
+        studentId: enrollment.userID,
+        courseId,
+        status: "Absent",
+        date: query.date.$gte,
+        markedBy: null,
+        classDay: getClassDay(query.date.$gte),
+      };
+    });
 
     res
       .status(200)
       .json(
         ApiSuccess(
           200,
-          attendance,
+          combinedAttendance,
           "Course attendance records fetched successfully"
         )
       );
