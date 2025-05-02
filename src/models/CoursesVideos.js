@@ -5,8 +5,7 @@ const { Schema } = mongoose;
 const CourseVideos = new Schema(
   {
     courseID: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Course",
+      type: String,
       required: true,
     },
     courseName: {
@@ -25,7 +24,7 @@ const CourseVideos = new Schema(
     duration: {
       type: Number,
       // required: function () {
-      //   return this.mediaType !== "pdf";
+      //   return this.mediaType !== "pdf"; 
       // },
     },
     media: {
@@ -35,7 +34,7 @@ const CourseVideos = new Schema(
     document: {
       type: String,
       required: false,
-      default: null,
+      default: null
     },
   },
   {
