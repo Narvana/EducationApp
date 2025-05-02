@@ -4,6 +4,11 @@ const Course = require("../models/courses");
 const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 const { uploadToFirebase } = require("../utils/firebase/firebaseConfig");
+const mongoose = require("mongoose");
+const CourseVideo = require("../models/CoursesVideos");
+const CourseApplication = require("../models/courseApplication");
+const RecentCourse = require("../models/recentCourse");
+const WatchHistory = require("../models/watchHistory");
 
 // Create Category
 const createCategory = async (req, res) => {
@@ -52,12 +57,89 @@ const getCategories = async (req, res) => {
 // Delete Category
 const deleteCategory = async (req, res) => {
   try {
-    await Category.findByIdAndDelete(req.params.id);
-    res
-      .status(200)
-      .json({ status: 1, message: "Category deleted successfully" });
+    const { categoryID } = req.params;
+
+    // Start a session for transaction
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Find all courses in this category
+      const courses = await Course.find({ CategoryID: categoryID });
+      const courseIds = courses.map((course) => course._id);
+
+      // Delete all course videos associated with these courses
+      await CourseVideo.deleteMany(
+        { courseID: { $in: courseIds } },
+        { session }
+      );
+
+      // Delete all course applications for these courses
+      await CourseApplication.deleteMany(
+        { courseID: { $in: courseIds } },
+        { session }
+      );
+
+      // Delete all recent courses for these courses
+      await RecentCourse.deleteMany(
+        {
+          mediaID: {
+            $in: await CourseVideo.find({
+              courseID: { $in: courseIds },
+            }).select("_id"),
+          },
+        },
+        { session }
+      );
+
+      // Delete all watch history for these courses
+      await WatchHistory.deleteMany(
+        {
+          mediaID: {
+            $in: await CourseVideo.find({
+              courseID: { $in: courseIds },
+            }).select("_id"),
+          },
+        },
+        { session }
+      );
+
+      // Delete the courses
+      await Course.deleteMany({ CategoryID: categoryID }, { session });
+
+      // Finally delete the category
+      const deletedCategory = await Category.findByIdAndDelete(categoryID, {
+        session,
+      });
+
+      if (!deletedCategory) {
+        await session.abortTransaction();
+        return res.status(404).json(ApiErrors(404, "Category not found!"));
+      }
+
+      // If everything is successful, commit the transaction
+      await session.commitTransaction();
+
+      res
+        .status(200)
+        .json(
+          ApiSuccess(
+            200,
+            null,
+            "Category and all associated courses deleted successfully!"
+          )
+        );
+    } catch (error) {
+      // If any error occurs, abort the transaction
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      // End the session
+      session.endSession();
+    }
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error in deleteCategory:", error);
+    res.status(500).json(ApiErrors(500, error.message));
   }
 };
 

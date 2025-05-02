@@ -136,16 +136,27 @@ const getCoursesbyStudentID = async (req, res) => {
     }
 
     // Transform the data to include isEnrolled and other necessary fields
-    const formattedCourses = courses.map((course) => ({
-      ...course.courseID.toObject(),
-      isEnrolled: true,
-      enrollmentStatus: "Approved",
-    }));
+    const formattedCourses = courses
+      .filter((course) => course.courseID) // Filter out any null courseIDs
+      .map((course) => ({
+        ...course.courseID.toObject(),
+        isEnrolled: true,
+        enrollmentStatus: "Approved",
+      }));
+
+    if (formattedCourses.length === 0) {
+      return res
+        .status(200)
+        .json(
+          ApiSuccess(200, [], "This student is not enrolled in any courses.")
+        );
+    }
 
     res
       .status(200)
       .json(ApiSuccess(200, formattedCourses, "Courses fetched successfully"));
   } catch (error) {
+    console.error("Error in getCoursesbyStudentID:", error);
     res.status(500).json(ApiErrors(500, error.message));
   }
 };

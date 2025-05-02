@@ -15,28 +15,32 @@ const homePage = async (req, res) => {
     const recentCourses = await Course.find().sort({ createdAt: -1 }).limit(6);
     const topCourses = await Course.find().sort({ rating: -1 }).limit(6);
     const categories = await Category.find();
-    const suggestedCourses = await CourseApplication.find({
-      userID,
-      status: "Approved",
-    }).populate({
-      path: "courseID",
-      populate: {
-        path: "CategoryID",
-        select: "categoryName",
-      },
-    });
-
-    const formattedCourses = suggestedCourses.map((course) => ({
-      ...course.courseID.toObject(),
-      isEnrolled: true,
-      enrollmentStatus: "Approved",
-    }));
     const banners = await Banner.find();
     let recentlyWatched = [];
     let streakData = null;
+    let formattedCourses = [];
 
     if (userID) {
-      // Get student's selected categories
+      // Get approved course applications
+      const suggestedCourses = await CourseApplication.find({
+        userID,
+        status: "Approved",
+      }).populate({
+        path: "courseID",
+        populate: {
+          path: "CategoryID",
+          select: "categoryName",
+        },
+      });
+
+      // Filter out any null courseIDs and format the courses
+      formattedCourses = suggestedCourses
+        .filter((app) => app.courseID) // Filter out null courseIDs
+        .map((app) => ({
+          ...app.courseID.toObject(),
+          isEnrolled: true,
+          enrollmentStatus: "Approved",
+        }));
 
       streakData = await calculateStreak(userID);
 
@@ -113,6 +117,8 @@ const homePage = async (req, res) => {
         rating: Math.round(course.rating),
         ratingCount: course.ratingCount,
         createdAt: course.createdAt,
+        isEnrolled: course.isEnrolled,
+        enrollmentStatus: course.enrollmentStatus,
       })),
       categories: categories.map((category) => ({
         _id: category._id,
