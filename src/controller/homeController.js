@@ -5,6 +5,7 @@ const Banner = require("../models/banner");
 const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 const calculateStreak = require("../utils/Streak/streakandprogress");
+const Student = require("../models/student");
 
 const homePage = async (req, res) => {
   try {
@@ -16,8 +17,38 @@ const homePage = async (req, res) => {
     const banners = await Banner.find();
     let recentlyWatched = [];
     let streakData = null;
+    let suggestedCourses = [];
 
     if (userID) {
+      // Get student's selected categories
+      const student = await Student.findById(userID).select(
+        "selectedCategories"
+      );
+
+      if (
+        student &&
+        student.selectedCategories &&
+        student.selectedCategories.length > 0
+      ) {
+        // Find courses in student's selected categories
+        suggestedCourses = await Course.find({
+          CategoryID: { $in: student.selectedCategories },
+        })
+          .sort({ rating: -1 })
+          .limit(6)
+          .select(
+            "_id name thumbnail description CategoryID instructorID mediaCount rating ratingCount createdAt"
+          );
+      } else {
+        // If no categories selected, show top rated courses from all categories
+        suggestedCourses = await Course.find()
+          .sort({ rating: -1 })
+          .limit(6)
+          .select(
+            "_id name thumbnail description CategoryID instructorID mediaCount rating ratingCount createdAt"
+          );
+      }
+
       streakData = await calculateStreak(userID);
 
       const recentWatchedDocs = await RecentCourse.find({
@@ -71,6 +102,18 @@ const homePage = async (req, res) => {
         createdAt: course.createdAt,
       })),
       topCourses: topCourses.map((course) => ({
+        _id: course._id,
+        name: course.name,
+        thumbnail: course.thumbnail,
+        description: course.description,
+        CategoryID: course.CategoryID,
+        instructorID: course.instructorID,
+        mediaCount: course.mediaCount,
+        rating: Math.round(course.rating),
+        ratingCount: course.ratingCount,
+        createdAt: course.createdAt,
+      })),
+      suggestedCourses: suggestedCourses.map((course) => ({
         _id: course._id,
         name: course.name,
         thumbnail: course.thumbnail,
