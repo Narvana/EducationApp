@@ -6,6 +6,7 @@ const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 const calculateStreak = require("../utils/Streak/streakandprogress");
 const Student = require("../models/student");
+const CourseApplication = require("../models/courseApplication");
 
 const homePage = async (req, res) => {
   try {
@@ -14,40 +15,28 @@ const homePage = async (req, res) => {
     const recentCourses = await Course.find().sort({ createdAt: -1 }).limit(6);
     const topCourses = await Course.find().sort({ rating: -1 }).limit(6);
     const categories = await Category.find();
+    const suggestedCourses = await CourseApplication.find({
+      userID,
+      status: "Approved",
+    }).populate({
+      path: "courseID",
+      populate: {
+        path: "CategoryID",
+        select: "categoryName",
+      },
+    });
+
+    const formattedCourses = suggestedCourses.map((course) => ({
+      ...course.courseID.toObject(),
+      isEnrolled: true,
+      enrollmentStatus: "Approved",
+    }));
     const banners = await Banner.find();
     let recentlyWatched = [];
     let streakData = null;
-    let suggestedCourses = [];
 
     if (userID) {
       // Get student's selected categories
-      const student = await Student.findById(userID).select(
-        "selectedCategories"
-      );
-
-      if (
-        student &&
-        student.selectedCategories &&
-        student.selectedCategories.length > 0
-      ) {
-        // Find courses in student's selected categories
-        suggestedCourses = await Course.find({
-          CategoryID: { $in: student.selectedCategories },
-        })
-          .sort({ rating: -1 })
-          .limit(6)
-          .select(
-            "_id name thumbnail description CategoryID instructorID mediaCount rating ratingCount createdAt"
-          );
-      } else {
-        // If no categories selected, show top rated courses from all categories
-        suggestedCourses = await Course.find()
-          .sort({ rating: -1 })
-          .limit(6)
-          .select(
-            "_id name thumbnail description CategoryID instructorID mediaCount rating ratingCount createdAt"
-          );
-      }
 
       streakData = await calculateStreak(userID);
 
@@ -113,7 +102,7 @@ const homePage = async (req, res) => {
         ratingCount: course.ratingCount,
         createdAt: course.createdAt,
       })),
-      suggestedCourses: suggestedCourses.map((course) => ({
+      suggestedCourses: formattedCourses.map((course) => ({
         _id: course._id,
         name: course.name,
         thumbnail: course.thumbnail,
