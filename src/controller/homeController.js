@@ -19,26 +19,44 @@ const homePage = async (req, res) => {
 
     if (userID) {
       streakData = await calculateStreak(userID);
+
+      // Remove the progressPercentage filter to show all recently watched items
       const recentWatchedDocs = await RecentCourse.find({
         userID,
-        progressPercentage: { $lt: 100 },
       })
         .sort({ updatedAt: -1 })
         .limit(6)
-        .populate("mediaID");
+        .populate({
+          path: "mediaID",
+          populate: {
+            path: "courseID",
+            select: "name thumbnail",
+          },
+        });
 
-      recentlyWatched = recentWatchedDocs.map((item) => {
-        const media = item.mediaID;
-        return {
-          mediaID: media._id,
-          title: media.title,
-          media: media.media,
-          progress: item.progress,
-          progressPercentage: item.progressPercentage,
-          mediaType: media.mediaType,
-          duration: item.duration,
-        };
-      });
+      console.log(
+        "Recent Watched Docs:",
+        JSON.stringify(recentWatchedDocs, null, 2)
+      );
+
+      recentlyWatched = recentWatchedDocs
+        .map((item) => {
+          const media = item.mediaID;
+          if (!media) return null;
+
+          return {
+            mediaID: media._id,
+            title: media.title,
+            media: media.media,
+            progress: item.progress,
+            progressPercentage: item.progressPercentage,
+            mediaType: media.mediaType,
+            duration: item.duration,
+            courseName: media.courseName|| "Unknown Course",
+            courseThumbnail: media.courseID?.thumbnail || null,
+          };
+        })
+        .filter(Boolean);
     }
 
     const responseData = {
@@ -84,12 +102,14 @@ const homePage = async (req, res) => {
             minutesWatchedToday: Math.round(
               streakData.secondsWatchedToday / 60
             ), // Convert to minutes
+            streakProgress: streakData.streakProgress,
           }
         : {
             streak: 0,
             todayProgress: 0,
             minutesLeft: 60, // 60 minutes = 1 hour
             minutesWatchedToday: 0,
+            streakProgress: 0,
           },
     };
 
@@ -99,6 +119,7 @@ const homePage = async (req, res) => {
         ApiSuccess(200, responseData, "Home page content fetched successfully.")
       );
   } catch (error) {
+    console.error("Error in homePage:", error);
     res.status(500).json(ApiErrors(500, error.message));
   }
 };

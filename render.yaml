@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: education-app
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+    healthCheckPath: /test/database
+    autoDeploy: true
+
+databases:
+  - name: education-mongodb
+    databaseName: education_db
+    user: education_user
+    plan: free

@@ -13,10 +13,12 @@ const studentProfileSchema = new mongoose.Schema(
     fatherName: { type: String },
     country: { type: String },
     idNumber: { type: String },
-    categories: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category"
-    }]
+    categories: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category",
+      },
+    ],
   },
   { timestamps: true }
 );

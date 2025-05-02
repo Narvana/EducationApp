@@ -83,49 +83,53 @@ const addRecentlyWatched = async (req, res) => {
         .json(ApiErrors(400, "Progress cannot exceed total duration!"));
     }
 
-    // ✅ Save to Recently Watched
+    // Find existing recent course
     const existingCourse = await RecentCourse.findOne({ userID, mediaID });
-    
-let progressDifference = progressSeconds;
+    let progressDifference = 0;
 
-if (existingCourse) {
-  progressDifference = Math.max(0, progressSeconds - existingCourse.progress);
-  existingCourse.progress = progressSeconds;
-  existingCourse.progressPercentage = progressPercentage;
-  await existingCourse.save();
-} else {
-  const newRecentCourse = new RecentCourse({
-    userID,
-    mediaID,
-    progress: progressSeconds,
-    progressPercentage,
-    duration: totalDuration,
-  });
-  await newRecentCourse.save();
-}
-
-
- 
-    if (media.mediaType === "video" || media.mediaType === "audio") {
-      const today = moment().format("YYYY-MM-DD");
-      if (progressDifference > 0) {
-        await WatchHistory.findOneAndUpdate(
-          { userID, date: today },
-          { $inc: { totalSecondsWatched: progressDifference } },
-          { upsert: true, new: true }
-        );
+    if (existingCourse) {
+      // Calculate progress difference only if new progress is greater
+      if (progressSeconds > existingCourse.progress) {
+        progressDifference = progressSeconds - existingCourse.progress;
+        existingCourse.progress = progressSeconds;
+        existingCourse.progressPercentage = progressPercentage;
+        await existingCourse.save();
       }
+    } else {
+      // For new entries, use the full progress as difference
+      progressDifference = progressSeconds;
+      const newRecentCourse = new RecentCourse({
+        userID,
+        mediaID,
+        progress: progressSeconds,
+        progressPercentage,
+        duration: totalDuration,
+      });
+      await newRecentCourse.save();
     }
 
- 
-    let streak = 0;
+    // Update watch history only if there's actual progress
+    if (
+      progressDifference > 0 &&
+      (media.mediaType === "video" || media.mediaType === "audio")
+    ) {
+      const today = moment().format("YYYY-MM-DD");
+      await WatchHistory.findOneAndUpdate(
+        { userID, date: today },
+        { $inc: { totalSecondsWatched: progressDifference } },
+        { upsert: true, new: true }
+      );
+    }
+
+    // Calculate streak
     const streakGoalSeconds = 60 * 60; // 60 minutes = 3600 seconds
     const today = moment();
+    let streak = 0;
 
     for (let i = 0; i < 100; i++) {
       const date = today.clone().subtract(i, "days").format("YYYY-MM-DD");
-
       const dayWatch = await WatchHistory.findOne({ userID, date });
+
       if (dayWatch && dayWatch.totalSecondsWatched >= streakGoalSeconds) {
         streak++;
       } else {
@@ -137,6 +141,7 @@ if (existingCourse) {
       userID,
       date: today.format("YYYY-MM-DD"),
     });
+
     const secondsWatchedToday = todayWatch?.totalSecondsWatched || 0;
     const streakProgress = Math.min(
       100,
@@ -145,13 +150,16 @@ if (existingCourse) {
     const secondsLeft = Math.max(0, streakGoalSeconds - secondsWatchedToday);
 
     return res.status(200).json(
-      ApiSuccess(200, {
-       
-        streak,
-        secondsWatchedToday,
-        secondsLeft,
-        streakProgress,
-      }, "Progress updated successfully!")
+      ApiSuccess(
+        200,
+        {
+          streak,
+          secondsWatchedToday,
+          secondsLeft,
+          streakProgress,
+        },
+        "Progress updated successfully!"
+      )
     );
   } catch (error) {
     console.error("Error:", error);

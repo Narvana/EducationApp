@@ -1,19 +1,21 @@
 require("dotenv").config();
 
 const mongoose = require("mongoose");
-const uri =
-  process.env.URI;
 
-// console.log(uri);
-
-const connectToDatabase = async () => {
+const connectDB = async () => {
   try {
-    await mongoose.connect(uri);
-    console.log("Successfully connected to MongoDB EducationAPP Database");
+    const conn = await mongoose.connect(
+      process.env.URI,
+      {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      }
+    );
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error(`Error connecting to MongoDB: ${error.message}`);
-    process.exit(1); // Exit the process with failure code
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
   }
 };
 
-connectToDatabase();
+module.exports = connectDB;
