@@ -14,7 +14,6 @@ const getRecentlyWatched = async (req, res) => {
       return res.status(404).json(ApiErrors(404, "Student not found!"));
     }
 
-    // Find recently watched courses for the student
     const recentCourses = await RecentCourse.find({
       userID: studentID,
       progressPercentage: { $lt: 100 },
@@ -36,7 +35,7 @@ const getRecentlyWatched = async (req, res) => {
       duration: item.duration,
     }));
 
-    res
+    return res
       .status(200)
       .json(
         ApiSuccess(
@@ -46,8 +45,8 @@ const getRecentlyWatched = async (req, res) => {
         )
       );
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json(ApiErrors(500, error.message));
+    console.error("Error in getRecentlyWatched:", error);
+    return res.status(500).json(ApiErrors(500, error.message));
   }
 };
 
@@ -55,6 +54,10 @@ const addRecentlyWatched = async (req, res) => {
   try {
     const userID = req.userID;
     const { mediaID, progress } = req.body;
+
+    if (!userID || !mediaID || progress == null) {
+      return res.status(400).json(ApiErrors(400, "Missing required fields"));
+    }
 
     const student = await Student.findById(userID);
     if (!student)
@@ -83,20 +86,18 @@ const addRecentlyWatched = async (req, res) => {
         .json(ApiErrors(400, "Progress cannot exceed total duration!"));
     }
 
-    // Find existing recent course
     const existingCourse = await RecentCourse.findOne({ userID, mediaID });
     let progressDifference = 0;
 
     if (existingCourse) {
-      // Calculate progress difference only if new progress is greater
       if (progressSeconds > existingCourse.progress) {
         progressDifference = progressSeconds - existingCourse.progress;
         existingCourse.progress = progressSeconds;
         existingCourse.progressPercentage = progressPercentage;
+        existingCourse.duration = totalDuration;
         await existingCourse.save();
       }
     } else {
-      // For new entries, use the full progress as difference
       progressDifference = progressSeconds;
       const newRecentCourse = new RecentCourse({
         userID,
@@ -108,46 +109,49 @@ const addRecentlyWatched = async (req, res) => {
       await newRecentCourse.save();
     }
 
-    // Update watch history only if there's actual progress
+    // Watch history update
+    const today = moment().utc().format("YYYY-MM-DD");
+    let updatedWatchHistory = null;
+
     if (
       progressDifference > 0 &&
-      (media.mediaType === "video" || media.mediaType === "audio")
+      ["video", "audio"].includes(media.mediaType)
     ) {
-      const today = moment().format("YYYY-MM-DD");
-      await WatchHistory.findOneAndUpdate(
+      updatedWatchHistory = await WatchHistory.findOneAndUpdate(
         { userID, date: today },
         { $inc: { totalSecondsWatched: progressDifference } },
         { upsert: true, new: true }
       );
     }
 
-    // Calculate streak
-    const streakGoalSeconds = 60 * 60; // 60 minutes = 3600 seconds
-    const today = moment();
+    // Calculate streak efficiently
+    const streakGoalSeconds = 3600; // 60 min
     let streak = 0;
 
     for (let i = 0; i < 100; i++) {
-      const date = today.clone().subtract(i, "days").format("YYYY-MM-DD");
-      const dayWatch = await WatchHistory.findOne({ userID, date });
+      const checkDate = moment().utc().subtract(i, "days").format("YYYY-MM-DD");
+      const history = await WatchHistory.findOne({ userID, date: checkDate });
 
-      if (dayWatch && dayWatch.totalSecondsWatched >= streakGoalSeconds) {
+      if (history && history.totalSecondsWatched >= streakGoalSeconds) {
         streak++;
       } else {
         break;
       }
     }
 
-    const todayWatch = await WatchHistory.findOne({
-      userID,
-      date: today.format("YYYY-MM-DD"),
-    });
+    const todayWatch =
+      updatedWatchHistory ||
+      (await WatchHistory.findOne({
+        userID,
+        date: today,
+      }));
 
     const secondsWatchedToday = todayWatch?.totalSecondsWatched || 0;
+    const secondsLeft = Math.max(0, streakGoalSeconds - secondsWatchedToday);
     const streakProgress = Math.min(
       100,
       Math.round((secondsWatchedToday / streakGoalSeconds) * 100)
     );
-    const secondsLeft = Math.max(0, streakGoalSeconds - secondsWatchedToday);
 
     return res.status(200).json(
       ApiSuccess(
@@ -162,7 +166,7 @@ const addRecentlyWatched = async (req, res) => {
       )
     );
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error in addRecentlyWatched:", error);
     return res.status(500).json(ApiErrors(500, error.message));
   }
 };

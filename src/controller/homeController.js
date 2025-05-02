@@ -20,7 +20,6 @@ const homePage = async (req, res) => {
     if (userID) {
       streakData = await calculateStreak(userID);
 
-      // Remove the progressPercentage filter to show all recently watched items
       const recentWatchedDocs = await RecentCourse.find({
         userID,
       })
@@ -33,11 +32,6 @@ const homePage = async (req, res) => {
             select: "name thumbnail",
           },
         });
-
-      console.log(
-        "Recent Watched Docs:",
-        JSON.stringify(recentWatchedDocs, null, 2)
-      );
 
       recentlyWatched = recentWatchedDocs
         .map((item) => {
@@ -52,7 +46,7 @@ const homePage = async (req, res) => {
             progressPercentage: item.progressPercentage,
             mediaType: media.mediaType,
             duration: item.duration,
-            courseName: media.courseName|| "Unknown Course",
+            courseName: media.courseName || "Unknown Course",
             courseThumbnail: media.courseID?.thumbnail || null,
           };
         })
@@ -97,17 +91,15 @@ const homePage = async (req, res) => {
       streak: streakData
         ? {
             streak: streakData.streak,
-            todayProgress: Math.round(streakData.secondsWatchedToday / 60), // Convert to minutes
-            minutesLeft: Math.round(streakData.secondsLeft / 60), // Convert to minutes
-            minutesWatchedToday: Math.round(
-              streakData.secondsWatchedToday / 60
-            ), // Convert to minutes
+            todayProgress: streakData.minutesWatchedToday,
+            minutesLeft: streakData.minutesLeft,
+            minutesWatchedToday: streakData.minutesWatchedToday,
             streakProgress: streakData.streakProgress,
           }
         : {
             streak: 0,
             todayProgress: 0,
-            minutesLeft: 60, // 60 minutes = 1 hour
+            minutesLeft: 60,
             minutesWatchedToday: 0,
             streakProgress: 0,
           },

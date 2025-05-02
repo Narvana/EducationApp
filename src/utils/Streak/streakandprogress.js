@@ -3,15 +3,16 @@ const WatchHistory = require("../../models/watchHistory");
 
 const calculateStreak = async (userID) => {
   const today = moment().startOf("day");
-  const goalSeconds = 60 * 60; // 60 minutes = 3600 seconds
+  const goalMinutes = 60; // 60 minutes goal
+  const goalSeconds = goalMinutes * 60; // Convert to seconds for database comparison
 
   const histories = await WatchHistory.find({ userID })
     .sort({ date: -1 })
     .limit(30); // You can increase this if needed
 
   let streak = 0;
-  let secondsWatchedToday = 0;
-  let secondsLeft = goalSeconds;
+  let minutesWatchedToday = 0;
+  let minutesLeft = goalMinutes;
   let streakProgress = 0;
 
   for (let i = 0; i < histories.length; i++) {
@@ -19,15 +20,19 @@ const calculateStreak = async (userID) => {
     const diff = today.diff(entryDate, "days");
 
     if (diff === 0) {
-      secondsWatchedToday = histories[i].totalSecondsWatched || 0;
+      // Convert seconds to minutes for today's watch time
+      minutesWatchedToday = Math.round(
+        (histories[i].totalSecondsWatched || 0) / 60
+      );
       streakProgress = Math.min(
         100,
-        Math.round((secondsWatchedToday / goalSeconds) * 100)
+        Math.round((minutesWatchedToday / goalMinutes) * 100)
       );
-      secondsLeft = Math.max(0, goalSeconds - secondsWatchedToday);
+      minutesLeft = Math.max(0, goalMinutes - minutesWatchedToday);
     }
 
     if (diff === streak) {
+      // Check if they watched at least 60 minutes
       if ((histories[i].totalSecondsWatched || 0) >= goalSeconds) {
         streak++;
       } else {
@@ -40,8 +45,8 @@ const calculateStreak = async (userID) => {
 
   return {
     streak,
-    secondsWatchedToday,
-    secondsLeft,
+    minutesWatchedToday,
+    minutesLeft,
     streakProgress,
   };
 };
