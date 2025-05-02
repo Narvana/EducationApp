@@ -57,7 +57,7 @@ const getCategories = async (req, res) => {
 // Delete Category
 const deleteCategory = async (req, res) => {
   try {
-    const { categoryID } = req.params;
+    const { id } = req.params;
 
     // Start a session for transaction
     const session = await mongoose.startSession();
@@ -65,7 +65,7 @@ const deleteCategory = async (req, res) => {
 
     try {
       // Find all courses in this category
-      const courses = await Course.find({ CategoryID: categoryID });
+      const courses = await Course.find({ CategoryID: id });
       const courseIds = courses.map((course) => course._id);
 
       // Delete all course videos associated with these courses
@@ -105,10 +105,10 @@ const deleteCategory = async (req, res) => {
       );
 
       // Delete the courses
-      await Course.deleteMany({ CategoryID: categoryID }, { session });
+      await Course.deleteMany({ CategoryID: id }, { session });
 
       // Finally delete the category
-      const deletedCategory = await Category.findByIdAndDelete(categoryID, {
+      const deletedCategory = await Category.findByIdAndDelete(id, {
         session,
       });
 
