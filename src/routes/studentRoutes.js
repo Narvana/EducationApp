@@ -5,7 +5,7 @@ const {
   getCoursesByCategoryID,
   getCourseById,
 } = require("../controller/coursescontroller");
-const { getInstructor } = require("../controller/instructorController");
+
 const {
   addRating,
   getCourseRatings,
@@ -23,6 +23,7 @@ const {
   getProfileByStudentId,
   getAllProfile,
 } = require("../controller/studentProfile.js");
+const { getInstructors } = require("../controller/adminController.js");
 const router = express.Router();
 
 // Login
@@ -34,7 +35,7 @@ router.get("/categories/get", getCategories);
 
 router.get("/courses/categoryid=:id", authMiddleware, getCoursesByCategoryID);
 
-router.get("/teachers", getInstructor);
+router.get("/teachers", getInstructors);
 
 router.get("/course", authMiddleware, verifyToken, getCourseById);
 

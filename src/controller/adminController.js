@@ -9,6 +9,7 @@ const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const { uploadToFirebase } = require("../utils/firebase/firebaseConfig");
 
+
 // Register Super Admin (Only for first-time setup)
 const registerSuperAdmin = async (req, res) => {
   const { name, email, password } = req.body;
@@ -41,7 +42,6 @@ const createInstructor = async (req, res) => {
 
   const file = req.file;
 
-  console.log(file, "Received image");
 
   try {
     let instructorExists = await Instructor.findOne({ email });
@@ -56,7 +56,7 @@ const createInstructor = async (req, res) => {
     let teacherImage = "";
     if (file) {
       teacherImage = await uploadToFirebase(file);
-      console.log(teacherImage);
+    
     } else {
       return res
         .status(400)
@@ -124,7 +124,6 @@ const getInstructors = async (req, res) => {
   }
 };
 
-
 // Login
 const loginAdmin = async (req, res) => {
   const { email, password } = req.body;
@@ -132,10 +131,10 @@ const loginAdmin = async (req, res) => {
   try {
     const user = await Admin.findOne({ email });
 
-    if (!user) return res.status(400).json({ msg: "Invalid credentials" });
+    if (!user) return res.status(400).json(ApiErrors(400, "Invalid credentials"));
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
+    if (!isMatch) return res.status(400).json(ApiErrors(400, "Invalid credentials"));
 
     const token = await generateAccessToken(user._id);
 
@@ -155,19 +154,8 @@ const loginAdmin = async (req, res) => {
   }
 };
 
-// Check for token validation
-const verifyToken = async (req, res, next) => {
-  const token = req.headers["authorization"]?.split(" ")[1];
-  if (!token) return res.status(401).json({ msg: "No token provided" });
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    res.status(403).json({ msg: "Invalid token" });
-  }
-};
+
 
 module.exports = {
   registerSuperAdmin,

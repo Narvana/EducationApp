@@ -3,7 +3,6 @@ const express = require("express");
 const {
   createCourse,
   getCourses,
-  getCourseById,
   deleteCourse,
   updateCourse,
   getCourseByIdAdmin,
@@ -49,14 +48,11 @@ const {
   getAllApplications,
 } = require("../controller/courseEnrollment");
 const {
-  getCourseRatings,
   deleteRating,
   getRatingsAll,
-  addRating,
   addAdminRating,
 } = require("../controller/ratingController");
 const { getDashboardData } = require("../controller/dashboardController");
-const { verify } = require("jsonwebtoken");
 const {
   createBanner,
   getBanners,

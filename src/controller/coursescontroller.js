@@ -5,7 +5,7 @@ const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 const { uploadToFirebase } = require("../utils/firebase/firebaseConfig");
 const Category = require("../models/category");
-const courseApplication = require("../models/courseApplication");
+
 const CourseApplication = require("../models/courseApplication");
 
 // Create a new course
@@ -147,7 +147,7 @@ const getCourseById = async (req, res) => {
 
     // Check if student is enrolled
     let isEnrolled = false;
-    let enrollmentStatus = "not logged in";
+    let enrollmentStatus = "not_logged_in";
 
     if (userID) {
       const enrollment = await CourseApplication.findOne({
@@ -264,7 +264,7 @@ const getCoursesByCategoryID = async (req, res) => {
     // Construct response data
     const responseData = courses.map((course) => {
       const courseId = course._id.toString();
-      const enrollmentStatus = enrollmentMap[courseId] || "not applied";
+      const enrollmentStatus = enrollmentMap[courseId] || "Not Applied";
 
       return {
         _id: course._id,
@@ -278,7 +278,7 @@ const getCoursesByCategoryID = async (req, res) => {
         CategoryID: course.CategoryID,
         instructorID: course.instructorID,
         isEnrolled: userID ? enrollmentStatus === "approved" : false,
-        enrollmentStatus: userID ? enrollmentStatus : "not logged in",
+        enrollmentStatus: userID ? enrollmentStatus : "not_logged_in",
       };
     });
 

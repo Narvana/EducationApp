@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const generateAccessToken = require("../utils/token/generateAccessToken");
 const validatePassword = require("../utils/passwordValidation");
+const StudentProfile = require("../models/studentProfile");
 
 // Create Student
 
@@ -74,6 +75,16 @@ const studentLogin = async (req, res) => {
       return res.status(400).json(ApiErrors(400, "Invalid credentials"));
     }
 
+    const hasProfile = await StudentProfile.findOne({ student: student._id });
+
+    let approved = false;
+
+    if (hasProfile) {
+      approved = true;
+    } else {
+      approved = false;
+    }
+
     const token = await generateAccessToken(student._id);
 
     res.status(200).json({
@@ -84,7 +95,7 @@ const studentLogin = async (req, res) => {
         name: student.name,
         email: student.email,
         role: student.role,
-        isApproved: student.isApproved,
+        isApproved: approved,
       },
       message: "Student logged in successfully",
     });

@@ -3,7 +3,7 @@ require("./database/education.mongoDB");
 const adminRoutes = require("./routes/adminRoutes");
 const studentRoutes = require("./routes/studentRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
-
+const instructorRoutes = require("./routes/instructorRoutes");
 const express = require("express");
 const multer = require("multer");
 
@@ -67,6 +67,7 @@ app.use(
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin/attendance", attendanceRoutes);
+app.use("/api/instructor", instructorRoutes);
 app.use("/api/client", studentRoutes);
 
 app.use(

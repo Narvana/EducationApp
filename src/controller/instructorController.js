@@ -1,8 +1,9 @@
 const Instructor = require("../models/instructor");
+const bcrypt = require("bcryptjs");
+const generateAccessToken = require("../utils/token/generateAccessToken");
 const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 const { uploadToFirebase } = require("../utils/firebase/firebaseConfig");
-const Course = require("../models/courses");
 
 const updateInstructor = async (req, res) => {
   const { name, email, password, contact, idProof } = req.body;
@@ -49,40 +50,55 @@ const updateInstructor = async (req, res) => {
   }
 };
 
-const getInstructor = async (req, res) => {
-  try {
-    const instructors = await Instructor.find();
-
-  
-    res
-      .status(200)
-      .json(
-        ApiSuccess(
-          200,
-          instructors,
-          "Instructors with courses fetched successfully."
-        )
-      );
-  } catch (error) {
-    res.status(500).json(ApiErrors(500, error.message));
-  }
-};
-
 const deleteInstructor = async (req, res) => {
   try {
-    const instructor = await Instructor.findByIdAndDelete(req.params.id);
+    const instructorId = req.user.id;
+    const instructor = await Instructor.findById(instructorId);
+
     if (!instructor) {
-      return res
-        .status(404)
-        .json({ status: 0, message: "Instructor not found!" });
+      return res.status(404).json(ApiErrors(404, "Instructor not found"));
     }
 
+    await Instructor.findByIdAndDelete(instructorId);
     res
       .status(200)
-      .json({ status: 1, message: "Instructor deleted successfully." });
+      .json(ApiSuccess(200, null, "Instructor deleted successfully"));
   } catch (error) {
     res.status(500).json(ApiErrors(500, error.message));
   }
 };
 
-module.exports = { getInstructor, deleteInstructor, updateInstructor };
+const loginInstructor = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await Instructor.findOne({ email });
+
+    if (!user)
+      return res.status(400).json(ApiErrors(400, "Invalid credentials"));
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch)
+      return res.status(400).json(ApiErrors(400, "Invalid credentials"));
+
+    const token = await generateAccessToken(user._id);
+
+    res.status(200).json({
+      status: 1,
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    res.status(500).json(ApiErrors(500, error.message));
+  }
+};
+
+module.exports = {
+  deleteInstructor,
+  updateInstructor,
+  loginInstructor,
+};
