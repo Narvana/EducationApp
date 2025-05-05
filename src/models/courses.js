@@ -26,7 +26,7 @@ const CourseSchema = new Schema(
     },
     instructorID: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "instructor",
+      ref: "instructor" ,
       required: true,
     },
     isEnrolled: {

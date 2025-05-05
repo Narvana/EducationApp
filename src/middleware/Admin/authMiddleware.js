@@ -1,10 +1,11 @@
 const jwt = require("jsonwebtoken");
+const ApiErrors = require("../../utils/ApiResponse/ApiErrors");
 
 const authMiddleware = (req, res, next) => {
   const authHeader = req.header("Authorization");
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ msg: "No token, authorization denied" });
+    return res.status(401).json(ApiErrors(401, "No token, authorization denied"));
   }
 
   // Extract token
@@ -19,16 +20,14 @@ const authMiddleware = (req, res, next) => {
     req.user = decoded; // Attach decoded data to req
     next();
   } catch (error) {
-    return res.status(401).json({ msg: "Invalid token" });
+    return res.status(401).json(ApiErrors(401, "Invalid token"));
   }
 };
 
 // Middleware to allow only Super Admins
 const superAdminMiddleware = (req, res, next) => {
   if (req.user.role !== "superadmin") {
-    return res.status(403).json({
-      msg: "Access Denied! Only Super Admins can perform this action.",
-    });
+    return res.status(403).json(ApiErrors(403, "Access Denied! Only Super Admins can perform this action."));
   }
   next();
 };

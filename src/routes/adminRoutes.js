@@ -107,6 +107,7 @@ router.delete(
   "/instructors/delete/:id",
   authMiddleware,
   superAdminMiddleware,
+  verifyToken,
   deleteInstructor
 );
 

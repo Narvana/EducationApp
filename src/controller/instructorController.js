@@ -4,6 +4,9 @@ const generateAccessToken = require("../utils/token/generateAccessToken");
 const ApiErrors = require("../utils/ApiResponse/ApiErrors");
 const ApiSuccess = require("../utils/ApiResponse/ApiSuccess");
 const { uploadToFirebase } = require("../utils/firebase/firebaseConfig");
+const Course = require("../models/courses");
+const mongoose = require("mongoose");
+const Admin = require("../models/admin");
 
 const updateInstructor = async (req, res) => {
   const { name, email, password, contact, idProof } = req.body;
@@ -52,17 +55,50 @@ const updateInstructor = async (req, res) => {
 
 const deleteInstructor = async (req, res) => {
   try {
-    const instructorId = req.user.id;
+    const instructorId = req.params.id;
     const instructor = await Instructor.findById(instructorId);
+    const adminId = req.userID;
+
+    const admin = await Admin.findById(adminId);
+    console.log(adminId);
 
     if (!instructor) {
       return res.status(404).json(ApiErrors(404, "Instructor not found"));
     }
 
-    await Instructor.findByIdAndDelete(instructorId);
-    res
-      .status(200)
-      .json(ApiSuccess(200, null, "Instructor deleted successfully"));
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Find all courses associated with this instructor
+      const courses = await Course.find({ instructorID: instructorId });
+
+      console.log(courses);
+
+      if (courses.length > 0) {
+        // Update all courses to be assigned to admin
+        await Course.updateMany(
+          { instructorID: instructorId },
+          {
+            $set: {
+              instructorID: adminId,
+            },
+          },
+          { session }
+        );
+      }
+
+      await Instructor.findByIdAndDelete(instructorId, { session });
+      await session.commitTransaction();
+      res
+        .status(200)
+        .json(ApiSuccess(200, null, "Instructor deleted successfully"));
+    } catch (error) {
+      await session.abortTransaction();
+      res.status(500).json(ApiErrors(500, error.message));
+    } finally {
+      session.endSession();
+    }
   } catch (error) {
     res.status(500).json(ApiErrors(500, error.message));
   }
