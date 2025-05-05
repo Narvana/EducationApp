@@ -6,6 +6,11 @@ const jwt = require("jsonwebtoken");
 const generateAccessToken = require("../utils/token/generateAccessToken");
 const validatePassword = require("../utils/passwordValidation");
 const StudentProfile = require("../models/studentProfile");
+const CourseApplication = require("../models/courseApplication");
+const Attendance = require("../models/attendance");
+const WatchHistory = require("../models/watchHistory");
+const RecentCourse = require("../models/recentCourse");
+const mongoose = require("mongoose");
 
 // Create Student
 
@@ -148,15 +153,66 @@ const updateStudent = async (req, res) => {
 
 const deleteStudent = async (req, res) => {
   try {
-    const student = await Student.findByIdAndDelete(req.params.id);
-    if (!student) {
-      return res.status(404).json(ApiErrors(404, "Student not found!"));
-    }
+    const studentId = req.params.id;
 
-    res
-      .status(200)
-      .json({ status: 1, message: "Student deleted successfully" });
+    // Start a session for transaction
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Find all course applications for this student
+      const courseApplications = await CourseApplication.find({
+        userID: studentId,
+      });
+      const courseIds = courseApplications.map((app) => app.courseID);
+
+      // Delete all watch history for this student
+      await WatchHistory.deleteMany({ userID: studentId }, { session });
+
+      // Delete all recent courses for this student
+      await RecentCourse.deleteMany({ userID: studentId }, { session });
+
+      // Delete all attendance records for this student
+      await Attendance.deleteMany({ studentID: studentId }, { session });
+
+      // Delete all course applications for this student
+      await CourseApplication.deleteMany({ userID: studentId }, { session });
+
+      // Delete student profile
+      await StudentProfile.deleteOne({ student: studentId }, { session });
+
+      // Finally delete the student
+      const deletedStudent = await Student.findByIdAndDelete(studentId, {
+        session,
+      });
+
+      if (!deletedStudent) {
+        await session.abortTransaction();
+        return res.status(404).json(ApiErrors(404, "Student not found!"));
+      }
+
+      // If everything is successful, commit the transaction
+      await session.commitTransaction();
+
+      res
+        .status(200)
+        .json(
+          ApiSuccess(
+            200,
+            null,
+            "Student and all associated data deleted successfully!"
+          )
+        );
+    } catch (error) {
+      // If any error occurs, abort the transaction
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      // End the session
+      session.endSession();
+    }
   } catch (error) {
+    console.error("Error in deleteStudent:", error);
     res.status(500).json(ApiErrors(500, error.message));
   }
 };

@@ -8,7 +8,7 @@ const express = require("express");
 const multer = require("multer");
 const app = express();
 const mongoose = require("mongoose");
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -94,7 +94,7 @@ app.use((err, req, res, next) => {
         status: 0,
         data: "",
         statusCode: 413,
-        message: `${err.message}, max limit is 5MB`,
+        message: `${err.message}, max limit is 50MB`,
       });
     }
   }
