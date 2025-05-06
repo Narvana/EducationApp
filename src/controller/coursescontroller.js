@@ -7,12 +7,23 @@ const { uploadToFirebase } = require("../utils/firebase/firebaseConfig");
 const Category = require("../models/category");
 
 const CourseApplication = require("../models/courseApplication");
+const Admin = require("../models/admin");
 
 // Create a new course
 const createCourse = async (req, res) => {
   const { instructorID, name, description, CategoryID, title, mediaType } =
     req.body;
   const files = req.files || {};
+  const userID = req.userID;
+  let createdBy = null;
+
+  const byInstructor = await Instructor.findById(userID);
+
+  if (byInstructor) {
+    createdBy = byInstructor.name;
+  } else {
+    createdBy = "Admin";
+  }
 
   try {
     const categoryExists = await Category.findById(CategoryID);
@@ -60,6 +71,7 @@ const createCourse = async (req, res) => {
       CategoryID,
       instructorID,
       thumbnail: thumbnailURI,
+      createdBy,
     });
 
     await course.save();

@@ -51,6 +51,10 @@ const CourseSchema = new Schema(
       type: Number,
       default: 0,
     },
+    createdBy: {
+      type: String,
+      default: "Admin"
+    }
   },
   { timestamps: true }
 );

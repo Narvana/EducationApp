@@ -146,6 +146,7 @@ router.post(
     { name: "media", maxCount: 1 }, // Single file // Multiple files
   ]),
   superAdminMiddleware,
+  verifyToken,
   createCourse
 );
 
