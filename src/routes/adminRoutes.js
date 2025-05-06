@@ -6,6 +6,7 @@ const {
   deleteCourse,
   updateCourse,
   getCourseByIdAdmin,
+  getUnverifiedCourses,
 } = require("../controller/coursescontroller");
 const {
   registerSuperAdmin,
@@ -152,6 +153,7 @@ router.post(
 
 // Get all courses
 router.get("/courses/get", getCourses);
+router.get("/courses/get/unverified", getUnverifiedCourses);
 
 // Get a single course by ID
 router.get("/courses/get", getCourseByIdAdmin);

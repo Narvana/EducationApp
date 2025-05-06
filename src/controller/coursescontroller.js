@@ -41,7 +41,9 @@ const createCourse = async (req, res) => {
     // Ensure instructor exists
     const instructor = await Instructor.findById(instructorID);
     if (!instructor) {
-      instructorID: "Admin";
+      instructorID: {
+        name: "Admin";
+      }
     }
 
     // Validate required video
@@ -106,7 +108,49 @@ const createCourse = async (req, res) => {
 // Get all courses
 const getCourses = async (req, res) => {
   try {
-    let courses = await Course.find()
+    let courses = await Course.find({isVerified: true})
+      .populate("CategoryID", "categoryName")
+      .populate("instructorID", "name email");
+
+    // Fetch videos for each course
+    const courseIDs = courses.map((course) => course._id);
+    const videos = await CourseVideo.find({ courseID: { $in: courseIDs } });
+    console.log("Videos from database", videos);
+
+    const totalDuration = (course) =>
+      videos
+        .filter((video) => video.courseID.toString() === course._id.toString())
+        .map((v) => v.duration)
+        .reduce((a, b) => a + b, 0);
+
+    const filteredVideos = (course) =>
+      videos.filter(
+        (video) => video.courseID.toString() === course._id.toString()
+      );
+
+    // Attach videos to their respective courses
+    const coursesWithVideos = courses.map((course) => {
+      return {
+        ...course.toObject(),
+        mediaCount: filteredVideos(course).length,
+        courseDuration: totalDuration(course),
+        media_files: filteredVideos(course),
+      };
+    });
+
+    res
+      .status(200)
+      .json(
+        ApiSuccess(200, coursesWithVideos, "Courses fetched successfully.")
+      );
+  } catch (error) {
+    return res.status(500).json(ApiErrors(500, error.message));
+  }
+};
+
+const getUnverifiedCourses = async (req, res) => {
+  try {
+    let courses = await Course.find({ isVerified: false })
       .populate("CategoryID", "categoryName")
       .populate("instructorID", "name email");
 
@@ -305,7 +349,7 @@ const getCoursesByCategoryID = async (req, res) => {
 // Update a course by ID
 const updateCourse = async (req, res) => {
   try {
-    const { name, description, CategoryID, instructorID } = req.body;
+    const { name, description, CategoryID, instructorID, isVerified } = req.body;
     const files = req.files;
 
     const course = await Course.findById(req.params.id);
@@ -361,4 +405,5 @@ module.exports = {
   deleteCourse,
   getCoursesByCategoryID,
   getCourseByIdAdmin,
+  getUnverifiedCourses,
 };
