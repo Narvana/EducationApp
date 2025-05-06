@@ -94,7 +94,12 @@ router.post(
   createInstructor
 );
 
-router.get("/instructors", getInstructors);
+router.get(
+  "/instructors",
+  authMiddleware,
+  superAdminMiddleware,
+  getInstructors
+);
 
 router.put(
   "/instructors/update/:id",
@@ -152,11 +157,21 @@ router.post(
 );
 
 // Get all courses
-router.get("/courses/get", getCourses);
-router.get("/courses/get/unverified", getUnverifiedCourses);
+router.get("/courses/get", authMiddleware, superAdminMiddleware, getCourses);
+router.get(
+  "/courses/get/unverified",
+  authMiddleware,
+  superAdminMiddleware,
+  getUnverifiedCourses
+);
 
 // Get a single course by ID
-router.get("/courses/get", getCourseByIdAdmin);
+router.get(
+  "/courses/get",
+  authMiddleware,
+  superAdminMiddleware,
+  getCourseByIdAdmin
+);
 
 // Update a course by ID
 router.put(
@@ -208,11 +223,16 @@ router.delete(
   deleteVideo
 );
 
-router.get("/courses/videos/:courseID", getVideosByCourseID);
+router.get(
+  "/courses/videos/:courseID",
+  authMiddleware,
+  superAdminMiddleware,
+  getVideosByCourseID
+);
 
 // Students
 
-router.get("/students", getStudent);
+router.get("/students", authMiddleware, superAdminMiddleware, getStudent);
 router.post(
   "/students/create",
   createStudent,
@@ -240,7 +260,12 @@ router.put(
   updateEnrollmentStatus
 );
 
-router.get("/enrollment/pending", getPendingApplications);
+router.get(
+  "/enrollment/pending",
+  authMiddleware,
+  superAdminMiddleware,
+  getPendingApplications
+);
 
 router.get("/enrollment/all", getAllApplications);
 
@@ -252,7 +277,7 @@ router.delete(
 );
 
 // Ratings & Reviews
-router.get("/ratings", getRatingsAll);
+router.get("/ratings", authMiddleware, superAdminMiddleware, getRatingsAll);
 
 router.delete(
   "/ratings/delete/:id",
@@ -262,7 +287,12 @@ router.delete(
 );
 
 // Dashboard
-router.get("/dashboard", getDashboardData);
+router.get(
+  "/dashboard",
+  authMiddleware,
+  superAdminMiddleware,
+  getDashboardData
+);
 
 // Verify Token
 
@@ -276,7 +306,7 @@ router.post(
   upload.single("image"),
   createBanner
 );
-router.get("/banners/get", getBanners);
+router.get("/banners/get", authMiddleware, superAdminMiddleware, getBanners);
 router.put(
   "/banners/update/:id",
   upload.single("image"),

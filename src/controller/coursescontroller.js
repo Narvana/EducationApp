@@ -369,8 +369,10 @@ const updateCourse = async (req, res) => {
     if (description) course.description = description;
     if (CategoryID) course.CategoryID = CategoryID;
     if (instructorID) course.instructorID = instructorID;
+    if (typeof isVerified !== "undefined") course.isVerified = isVerified;
 
     await course.save();
+
 
     res
       .status(200)
