@@ -118,8 +118,10 @@ const getEntries = async (req, res) => {
 
     // Find all entries
     const fees = await FeeEntry.find()
-      .populate("studentId", "name contact email")
+      .populate("studentId", "_id name contact email")
       .populate("courseId", "name");
+
+    console.log(fees);
 
     // Update status based on due date and migrate old status values
     for (let fee of fees) {
@@ -147,13 +149,13 @@ const getEntries = async (req, res) => {
 
     // Get payment history for all students
     const paymentHistory = await PaymentHistory.find()
-      .populate("studentId", "name contact email")
+      .populate("studentId", "_id name contact email")
       .populate("courseId", "name")
       .sort({ paymentDate: -1 });
 
     // Group payment history by student
     const historyByStudent = paymentHistory.reduce((acc, payment) => {
-      const studentId = payment.studentId._id.toString();
+      const studentId = payment?.studentId?._id.toString();
       if (!acc[studentId]) {
         acc[studentId] = [];
       }
@@ -163,7 +165,14 @@ const getEntries = async (req, res) => {
 
     // Combine current fees with payment history
     const entriesWithHistory = fees.map((fee) => {
-      const studentId = fee.studentId._id.toString();
+      if (!fee.studentId) {
+        return {
+          ...fee.toObject(),
+          paymentHistory: [],
+        };
+      }
+
+      const studentId = fee.studentId?._id?.toString();
       return {
         ...fee.toObject(),
         paymentHistory: historyByStudent[studentId] || [],

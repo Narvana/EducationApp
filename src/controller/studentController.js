@@ -11,6 +11,8 @@ const Attendance = require("../models/attendance");
 const WatchHistory = require("../models/watchHistory");
 const RecentCourse = require("../models/recentCourse");
 const mongoose = require("mongoose");
+const FeeEntry = require("../models/feeStructure");
+const PaymentHistory = require("../models/paymentHistory");
 
 // Create Student
 
@@ -177,6 +179,10 @@ const deleteStudent = async (req, res) => {
 
       // Delete all course applications for this student
       await CourseApplication.deleteMany({ userID: studentId }, { session });
+
+      await FeeEntry.deleteMany({ studentId }, { session });
+
+      await PaymentHistory.deleteMany({ studentId }, { session });
 
       // Delete student profile
       await StudentProfile.deleteOne({ student: studentId }, { session });
