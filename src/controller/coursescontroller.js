@@ -41,7 +41,7 @@ const createCourse = async (req, res) => {
     // Ensure instructor exists
     const instructor = await Instructor.findById(instructorID);
     if (!instructor) {
-      return res.status(404).json(ApiErrors(404, "Instructor not found"));
+      instructorID: "Admin";
     }
 
     // Validate required video
