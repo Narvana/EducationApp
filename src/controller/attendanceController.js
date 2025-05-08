@@ -85,10 +85,7 @@ const markAttendance = async (req, res) => {
     const existingAttendance = await Attendance.findOne({
       courseId,
       studentId,
-      // date: {
-      //   $gte: new Date(date.setHours(0, 0, 0, 0)),
-      //   $lt: new Date(date.setHours(23, 59, 59, 999)),
-      // },
+     
     });
 
     // Only validate schedule if this is the first attendance record for the course on this date
