@@ -16,6 +16,8 @@ const createCourse = async (req, res) => {
   const files = req.files || {};
   const userID = req.userID;
   let createdBy = null;
+  const instructorId = userID || req.body.instructorID;
+
 
   const byInstructor = await Instructor.findById(userID);
 
@@ -71,7 +73,7 @@ const createCourse = async (req, res) => {
       name,
       description,
       CategoryID,
-      instructorID,
+      instructorID: instructorId,
       thumbnail: thumbnailURI,
       createdBy,
     });
