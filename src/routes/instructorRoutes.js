@@ -11,7 +11,7 @@ const {
   updateCourse,
 } = require("../controller/coursescontroller");
 const upload = require("../middleware/ImageUpload/imageUploadMiddleware");
-const { createVideo, updateVideo, deleteVideo } = require("../controller/courseVideoController");
+const { createVideo, updateVideo, deleteVideo, getVideosByCourseID } = require("../controller/courseVideoController");
 
 // Auth routes
 router.post("/login", loginInstructor);
@@ -65,6 +65,12 @@ router.delete(
   "/courses/videos/delete/:id",
   authMiddleware,
   deleteVideo
+);
+
+router.get(
+  "/courses/videos/:courseID",
+  authMiddleware,
+  getVideosByCourseID
 );
 
 
