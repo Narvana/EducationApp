@@ -19,7 +19,7 @@ router.post("/login", loginInstructor);
 // Course management
 router.get("/courses", authMiddleware, verifyToken, getInstructorCourses);
 
-router.get(
+router.post(
   "/courses/create",
   authMiddleware,
   upload.fields([
