@@ -11,7 +11,17 @@ const {
   updateCourse,
 } = require("../controller/coursescontroller");
 const upload = require("../middleware/ImageUpload/imageUploadMiddleware");
-const { createVideo, updateVideo, deleteVideo, getVideosByCourseID } = require("../controller/courseVideoController");
+const {
+  createVideo,
+  updateVideo,
+  deleteVideo,
+  getVideosByCourseID,
+} = require("../controller/courseVideoController");
+const {
+  markAttendance,
+  getStudentAttendance,
+  getStudentAttendanceByTeacherId,
+} = require("../controller/attendanceController");
 
 // Auth routes
 router.post("/login", loginInstructor);
@@ -60,19 +70,19 @@ router.put(
   updateVideo
 );
 
+router.delete("/courses/videos/delete/:id", authMiddleware, deleteVideo);
 
-router.delete(
-  "/courses/videos/delete/:id",
-  authMiddleware,
-  deleteVideo
-);
+router.get("/courses/videos/:courseID", authMiddleware, getVideosByCourseID);
+
+// Attendance routes
+
+router.post("/attendance/mark", authMiddleware, verifyToken, markAttendance);
 
 router.get(
-  "/courses/videos/:courseID",
+  "/attendance/student",
   authMiddleware,
-  getVideosByCourseID
+  verifyToken,
+  getStudentAttendanceByTeacherId
 );
-
-
 
 module.exports = router;

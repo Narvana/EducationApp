@@ -8,16 +8,24 @@ const {
   updateAttendance,
   getAttendanceStats,
 } = require("../controller/attendanceController");
-const { authMiddleware } = require("../middleware/Admin/authMiddleware");
-const { verify } = require("jsonwebtoken");
+const {
+  authMiddleware,
+  superAdminMiddleware,
+} = require("../middleware/Admin/authMiddleware");
 const verifyToken = require("../middleware/token/verifyToken");
 
 // Routes for marking attendance (both instructor and admin)
-router.post("/mark", authMiddleware, markAttendance);
+router.post(
+  "/mark",
+  authMiddleware,
+  verifyToken,
+  superAdminMiddleware,
+  markAttendance
+);
 router.post("/mark-bulk", authMiddleware, markBulkAttendance);
 
 // Routes for getting attendance records
-router.get("/student", authMiddleware,verifyToken, getStudentAttendance);
+router.get("/student", authMiddleware, verifyToken, getStudentAttendance);
 router.get("/course", authMiddleware, getCourseAttendance);
 
 // Route for updating attendance (both instructor and admin)

@@ -6,6 +6,7 @@ const Student = require("../models/student");
 const CourseApplication = require("../models/courseApplication");
 const Admin = require("../models/admin");
 const mongoose = require("mongoose");
+const Course = require("../models/courses");
 
 // Helper function to get class day
 const getClassDay = (date) => {
@@ -43,20 +44,6 @@ const validateEnrollment = async (studentId, courseId) => {
   return enrollment;
 };
 
-// Validate instructor assignment
-const validateInstructor = async (instructorId, courseId) => {
-  const instructor = await Instructor.findOne({
-    _id: instructorId,
-    assignedCourses: courseId,
-  });
-  if (!instructor) {
-    return "Admin";
-  } else {
-    return instructor;
-  }
-  return;
-};
-
 // Validate time format
 const validateTimeFormat = (time) => {
   const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
@@ -69,7 +56,16 @@ const validateTimeFormat = (time) => {
 const markAttendance = async (req, res) => {
   try {
     const { studentId, courseId, status, schedule, attendanceDate } = req.body;
-    const markedBy = req.user.id;
+    let markedBy = null;
+    const userID = req.userID;
+
+    const instructor = await Instructor.findById(userID);
+
+    if (instructor) {
+      markedBy = instructor.name;
+    } else {
+      markedBy = "Admin";
+    }
 
     // Validate future dates
     const date = attendanceDate ? new Date(attendanceDate) : new Date();
@@ -85,7 +81,6 @@ const markAttendance = async (req, res) => {
     const existingAttendance = await Attendance.findOne({
       courseId,
       studentId,
-     
     });
 
     // Only validate schedule if this is the first attendance record for the course on this date
@@ -102,9 +97,6 @@ const markAttendance = async (req, res) => {
 
     // Validate enrollment
     await validateEnrollment(studentId, courseId);
-
-    // Validate instructor
-    await validateInstructor(markedBy, courseId);
 
     const attendance = new Attendance({
       studentId,
@@ -296,7 +288,7 @@ const getStudentAttendance = async (req, res) => {
 
       // Get the current user (admin/instructor) who is viewing the attendance
       console.log(req.user.id);
-      
+
       let currentUser = await Instructor.findOne({ _id: req.user.id });
 
       console.log("Current USer", currentUser);
@@ -403,6 +395,161 @@ const getStudentAttendance = async (req, res) => {
     const attendance = await Attendance.find(query)
       .populate("courseId", "name")
       .populate("markedBy", "name email role")
+      .populate("studentId", "name")
+      .sort({ date: -1 });
+
+    res
+      .status(200)
+      .json(
+        ApiSuccess(200, attendance, "Attendance records fetched successfully")
+      );
+  } catch (error) {
+    res.status(500).json(ApiErrors(500, error.message));
+  }
+};
+
+const getStudentAttendanceByTeacherId = async (req, res) => {
+  try {
+    const { studentId } = req.query;
+    const userID = req.userID;
+    const query = {};
+
+    // If no studentId is provided, show all students with current date's attendance
+    if (!studentId) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      // Get courses taught by this instructor
+      const instructorCourses = await Course.find({
+        instructorID: userID,
+      }).select("_id name");
+
+      if (!instructorCourses.length) {
+        return res
+          .status(404)
+          .json(ApiErrors(404, "No courses found for this instructor"));
+      }
+
+      const courseIds = instructorCourses.map((course) => course._id);
+
+      // Get enrolled students for these courses
+      const studentEnrollments = await CourseApplication.find({
+        courseID: { $in: courseIds },
+        status: { $regex: new RegExp("^approved$", "i") },
+      }).populate({
+        path: "userID",
+        select: "_id name",
+        model: "Student",
+      });
+
+      if (!studentEnrollments.length) {
+        return res
+          .status(404)
+          .json(ApiErrors(404, "No students enrolled in your courses"));
+      }
+
+      // Get today's attendance for these courses
+      const existingAttendance = await Attendance.find({
+        courseId: { $in: courseIds },
+        date: {
+          $gte: today,
+          $lt: tomorrow,
+        },
+      })
+        .populate("studentId", "name")
+        .populate("courseId", "name")
+        .lean();
+
+      // Create a map of existing attendance
+      const attendanceMap = new Map();
+      existingAttendance.forEach((att) => {
+        const key = `${att.studentId._id.toString()}-${att.courseId._id.toString()}`;
+        attendanceMap.set(key, att);
+      });
+
+      // Get the current instructor
+      const currentInstructor = await Instructor.findById(userID);
+      if (!currentInstructor) {
+        return res.status(404).json(ApiErrors(404, "Instructor not found"));
+      }
+
+      // Combine existing attendance with default absent status for students without attendance
+      const combinedAttendance = [];
+      studentEnrollments.forEach((enrollment) => {
+        const student = enrollment.userID;
+        const course = instructorCourses.find(
+          (c) => c._id.toString() === enrollment.courseID.toString()
+        );
+
+        if (!course) return;
+
+        const key = `${student._id.toString()}-${course._id.toString()}`;
+        const existingRecord = attendanceMap.get(key);
+
+        if (existingRecord) {
+          combinedAttendance.push(existingRecord);
+        } else {
+          combinedAttendance.push({
+            studentId: student,
+            courseId: course,
+            status: "Absent",
+            date: today,
+            markedBy: currentInstructor,
+            classDay: getClassDay(today),
+          });
+        }
+      });
+
+      return res
+        .status(200)
+        .json(
+          ApiSuccess(
+            200,
+            combinedAttendance,
+            "Attendance records fetched successfully"
+          )
+        );
+    }
+
+    // If studentId is provided, get their enrolled courses for this instructor
+    const instructorCourses = await Course.find({
+      instructorID: userID,
+    }).select("_id name");
+
+    if (!instructorCourses.length) {
+      return res
+        .status(404)
+        .json(ApiErrors(404, "No courses found for this instructor"));
+    }
+
+    const courseIds = instructorCourses.map((course) => course._id);
+
+    // Get student's enrollments in instructor's courses
+    const enrolledCourses = await CourseApplication.find({
+      userID: studentId,
+      courseID: { $in: courseIds },
+      status: { $regex: new RegExp("^approved$", "i") },
+    }).populate({
+      path: "courseID",
+      select: "_id name",
+      model: "Course",
+    });
+
+    if (enrolledCourses.length === 0) {
+      return res
+        .status(404)
+        .json(ApiErrors(404, "Student is not enrolled in any of your courses"));
+    }
+
+    // Get attendance for each enrolled course
+    const attendance = await Attendance.find({
+      studentId,
+      courseId: { $in: courseIds },
+    })
+      .populate("courseId", "name")
+      .populate("markedBy", "name email")
       .populate("studentId", "name")
       .sort({ date: -1 });
 
@@ -576,4 +723,5 @@ module.exports = {
   getCourseAttendance,
   updateAttendance,
   getAttendanceStats,
+  getStudentAttendanceByTeacherId,
 };
