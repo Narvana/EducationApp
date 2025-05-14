@@ -19,9 +19,10 @@ const {
 } = require("../controller/courseVideoController");
 const {
   markAttendance,
-  getStudentAttendance,
   getStudentAttendanceByTeacherId,
 } = require("../controller/attendanceController");
+
+const { getEnrolledStudentsInstructor } = require("../controller/studentController");
 
 // Auth routes
 router.post("/login", loginInstructor);
@@ -84,5 +85,11 @@ router.get(
   verifyToken,
   getStudentAttendanceByTeacherId
 );
+
+// Get all enrolled students for teacher's courses
+
+
+// Add the route
+router.get("/enrolled-students", getEnrolledStudentsInstructor);
 
 module.exports = router;

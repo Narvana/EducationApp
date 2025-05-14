@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const generateAccessToken = require("../utils/token/generateAccessToken");
 const validatePassword = require("../utils/passwordValidation");
 const StudentProfile = require("../models/studentProfile");
+const Course = require("../models/courses");
 const CourseApplication = require("../models/courseApplication");
 const Attendance = require("../models/attendance");
 const WatchHistory = require("../models/watchHistory");
@@ -223,10 +224,115 @@ const deleteStudent = async (req, res) => {
   }
 };
 
+const getEnrolledStudentsInstructor = async (req, res) => {
+  try {
+    const teacherId = req.userID;
+    const { courseId, search } = req.query;
+
+    // Find all courses taught by the teacher
+    const courseQuery = { teacherId };
+    if (courseId) {
+      courseQuery._id = courseId;
+    }
+    const courses = await Course.find(courseQuery);
+
+    if (!courses.length) {
+      return res
+        .status(404)
+        .json(ApiErrors(404, "No courses found for this teacher"));
+    }
+
+    // Find all approved course applications for these courses
+    const applications = await CourseApplication.find({
+      courseID: { $in: courses.map((course) => course._id) },
+      status: { $regex: new RegExp("^approved$", "i") },
+    })
+      .populate({
+        path: "userID",
+        select: "name contact email role isApproved profile createdAt",
+        populate: {
+          path: "profile",
+          select: "motherName fatherName country idNumber categories",
+        },
+      })
+      .populate("courseID", "name description");
+
+    // Group applications by student ID
+    const studentMap = new Map();
+
+    applications.forEach((app) => {
+      const studentId = app.userID._id.toString();
+
+      if (!studentMap.has(studentId)) {
+        // First time seeing this student
+        studentMap.set(studentId, {
+          studentId: app.userID._id,
+          name: app.userID.name,
+          contact: app.userID.contact,
+          email: app.userID.email,
+          role: app.userID.role,
+          isApproved: app.userID.isApproved,
+          profile: app.userID.profile
+            ? {
+                motherName: app.userID.profile.motherName,
+                fatherName: app.userID.profile.fatherName,
+                country: app.userID.profile.country,
+                idNumber: app.userID.profile.idNumber,
+                categories: app.userID.profile.categories,
+              }
+            : null,
+          studentSince: app.userID.createdAt,
+          enrolledCourses: [],
+        });
+      }
+
+      // Add course to student's enrolled courses
+      studentMap.get(studentId).enrolledCourses.push({
+        courseId: app.courseID._id,
+        courseName: app.courseID.name,
+        description: app.courseID.description,
+        enrollmentDate: app.createdAt,
+        status: app.status,
+      });
+    });
+
+    // Convert Map to array
+    const enrolledStudents = Array.from(studentMap.values());
+
+    // Apply search filter if provided
+    let filteredStudents = enrolledStudents;
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredStudents = enrolledStudents.filter(
+        (student) =>
+          student.name.toLowerCase().includes(searchLower) ||
+          student.email.toLowerCase().includes(searchLower) ||
+          student.contact.toString().includes(searchLower) ||
+          student.enrolledCourses.some((course) =>
+            course.courseName.toLowerCase().includes(searchLower)
+          )
+      );
+    }
+
+    res
+      .status(200)
+      .json(
+        ApiSuccess(
+          200,
+          filteredStudents,
+          "Enrolled students retrieved successfully"
+        )
+      );
+  } catch (error) {
+    res.status(500).json(ApiErrors(500, error.message));
+  }
+};
+
 module.exports = {
   getStudent,
   updateStudent,
   createStudent,
   studentLogin,
   deleteStudent,
+  getEnrolledStudentsInstructor,
 };
