@@ -441,8 +441,10 @@ const getStudentAttendanceByTeacherId = async (req, res) => {
       }).populate({
         path: "userID",
         select: "_id name",
-        model: "Student",
+        model: "student",
       });
+
+     
 
       if (!studentEnrollments.length) {
         return res
@@ -494,7 +496,7 @@ const getStudentAttendanceByTeacherId = async (req, res) => {
           combinedAttendance.push({
             studentId: student,
             courseId: course,
-            status: "Absent",
+            status: status,
             date: today,
             markedBy: currentInstructor,
             classDay: getClassDay(today),
@@ -545,7 +547,7 @@ const getStudentAttendanceByTeacherId = async (req, res) => {
 
     // Get attendance for each enrolled course
     const attendance = await Attendance.find({
-      studentId,
+      studentId: studentId,
       courseId: { $in: courseIds },
     })
       .populate("courseId", "name")
@@ -553,12 +555,35 @@ const getStudentAttendanceByTeacherId = async (req, res) => {
       .populate("studentId", "name")
       .sort({ date: -1 });
 
+    if (!attendance.length) {
+      // If no attendance records found, return default absent status for each enrolled course
+      const defaultAttendance = enrolledCourses.map((enrollment) => ({
+        studentId: { _id: studentId, name: "Student" }, // You might want to populate this properly
+        courseId: enrollment.courseID,
+        status: "Absent",
+        date: new Date(),
+        markedBy: null,
+        classDay: getClassDay(new Date()),
+      }));
+
+      return res
+        .status(200)
+        .json(
+          ApiSuccess(
+            200,
+            defaultAttendance,
+            "No attendance records found. Showing default status."
+          )
+        );
+    }
+
     res
       .status(200)
       .json(
         ApiSuccess(200, attendance, "Attendance records fetched successfully")
       );
   } catch (error) {
+    console.error("Error in getStudentAttendanceByTeacherId:", error);
     res.status(500).json(ApiErrors(500, error.message));
   }
 };

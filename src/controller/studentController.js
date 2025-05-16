@@ -229,23 +229,19 @@ const getEnrolledStudentsInstructor = async (req, res) => {
     const teacherId = req.userID;
     const { courseId, search } = req.query;
 
-    // Find all courses taught by the teacher
     const courseQuery = { teacherId };
-    if (courseId) {
-      courseQuery._id = courseId;
-    }
+    if (courseId) courseQuery._id = courseId;
+
     const courses = await Course.find(courseQuery);
-
     if (!courses.length) {
-      return res
-        .status(404)
-        .json(ApiErrors(404, "No courses found for this teacher"));
+      return res.status(404).json(ApiErrors(404, "No courses found"));
     }
 
-    // Find all approved course applications for these courses
+    const courseIds = courses.map((c) => c._id);
+
     const applications = await CourseApplication.find({
-      courseID: { $in: courses.map((course) => course._id) },
-      status: { $regex: new RegExp("^approved$", "i") },
+      courseID: { $in: courseIds },
+      status: { $regex: /^approved$/i },
     })
       .populate({
         path: "userID",
@@ -257,36 +253,35 @@ const getEnrolledStudentsInstructor = async (req, res) => {
       })
       .populate("courseID", "name description");
 
-    // Group applications by student ID
     const studentMap = new Map();
 
-    applications.forEach((app) => {
-      const studentId = app.userID._id.toString();
+    for (const app of applications) {
+      const user = app.userID;
+      const studentId = user._id.toString();
 
+      // Check if we've already added this student
       if (!studentMap.has(studentId)) {
-        // First time seeing this student
+        // Check if attendance exists for any course
+        const attendanceExists = await Attendance.exists({
+          studentId: user._id,
+          courseId: { $in: courseIds },
+        });
+
         studentMap.set(studentId, {
-          studentId: app.userID._id,
-          name: app.userID.name,
-          contact: app.userID.contact,
-          email: app.userID.email,
-          role: app.userID.role,
-          isApproved: app.userID.isApproved,
-          profile: app.userID.profile
-            ? {
-                motherName: app.userID.profile.motherName,
-                fatherName: app.userID.profile.fatherName,
-                country: app.userID.profile.country,
-                idNumber: app.userID.profile.idNumber,
-                categories: app.userID.profile.categories,
-              }
-            : null,
-          studentSince: app.userID.createdAt,
+          studentId: user._id,
+          name: user.name,
+          contact: user.contact,
+          email: user.email,
+          role: user.role,
+          isApproved: user.isApproved,
+          profile: user.profile || null,
+          studentSince: user.createdAt,
           enrolledCourses: [],
+          attendance: !!attendanceExists,
         });
       }
 
-      // Add course to student's enrolled courses
+      // Add this course to the student's enrolledCourses
       studentMap.get(studentId).enrolledCourses.push({
         courseId: app.courseID._id,
         courseName: app.courseID.name,
@@ -294,22 +289,20 @@ const getEnrolledStudentsInstructor = async (req, res) => {
         enrollmentDate: app.createdAt,
         status: app.status,
       });
-    });
+    }
 
-    // Convert Map to array
-    const enrolledStudents = Array.from(studentMap.values());
+    let students = Array.from(studentMap.values());
 
-    // Apply search filter if provided
-    let filteredStudents = enrolledStudents;
+    // Apply search filter if needed
     if (search) {
-      const searchLower = search.toLowerCase();
-      filteredStudents = enrolledStudents.filter(
+      const s = search.toLowerCase();
+      students = students.filter(
         (student) =>
-          student.name.toLowerCase().includes(searchLower) ||
-          student.email.toLowerCase().includes(searchLower) ||
-          student.contact.toString().includes(searchLower) ||
-          student.enrolledCourses.some((course) =>
-            course.courseName.toLowerCase().includes(searchLower)
+          student.name.toLowerCase().includes(s) ||
+          student.email.toLowerCase().includes(s) ||
+          student.contact.toString().includes(s) ||
+          student.enrolledCourses.some((c) =>
+            c.courseName.toLowerCase().includes(s)
           )
       );
     }
@@ -317,16 +310,13 @@ const getEnrolledStudentsInstructor = async (req, res) => {
     res
       .status(200)
       .json(
-        ApiSuccess(
-          200,
-          filteredStudents,
-          "Enrolled students retrieved successfully"
-        )
+        ApiSuccess(200, students, "Enrolled students retrieved successfully")
       );
-  } catch (error) {
-    res.status(500).json(ApiErrors(500, error.message));
+  } catch (err) {
+    res.status(500).json(ApiErrors(500, err.message));
   }
 };
+
 
 module.exports = {
   getStudent,
