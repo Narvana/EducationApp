@@ -339,7 +339,7 @@ const getStudentAttendance = async (req, res) => {
             } else {
               combinedAttendance.push({
                 studentId: student,
-                status: "Absent",
+                status: "Present",
                 date: today,
                 courseId: course,
               
