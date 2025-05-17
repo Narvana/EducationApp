@@ -262,7 +262,6 @@ const getStudentAttendance = async (req, res) => {
       })
         .populate("studentId", "name")
         .populate("courseId", "name")
-        // .populate("markedBy", "name email role")
         .lean();
 
       // Create a map of existing attendance
@@ -287,14 +286,14 @@ const getStudentAttendance = async (req, res) => {
       });
 
       // Get the current user (admin/instructor) who is viewing the attendance
-      console.log(req.user.id);
-
-      let currentUser = await Instructor.findOne({ _id: req.user.id });
-
-      console.log("Current USer", currentUser);
-
-      if (!currentUser) {
-        currentUser = await Admin.findOne(req.user.id).select("email").lean();
+      let currentUser = null;
+      try {
+        currentUser = await Instructor.findOne({ _id: req.user.id });
+        if (!currentUser) {
+          currentUser = await Admin.findOne({ _id: req.user.id });
+        }
+      } catch (error) {
+        console.log("Error finding current user:", error);
       }
 
       // If still no user found, use a default admin
@@ -323,7 +322,7 @@ const getStudentAttendance = async (req, res) => {
               status: "Absent",
               date: today,
               courseId: null,
-              markedBy: req.user.id,
+             
               classDay: getClassDay(today),
             });
           }
@@ -343,7 +342,7 @@ const getStudentAttendance = async (req, res) => {
                 status: "Absent",
                 date: today,
                 courseId: course,
-                markedBy: currentUser,
+              
                 classDay: getClassDay(today),
               });
             }
@@ -394,7 +393,7 @@ const getStudentAttendance = async (req, res) => {
 
     const attendance = await Attendance.find(query)
       .populate("courseId", "name")
-      .populate("markedBy", "name email role")
+    
       .populate("studentId", "name")
       .sort({ date: -1 });
 
@@ -443,8 +442,6 @@ const getStudentAttendanceByTeacherId = async (req, res) => {
         select: "_id name",
         model: "student",
       });
-
-     
 
       if (!studentEnrollments.length) {
         return res
@@ -520,6 +517,11 @@ const getStudentAttendanceByTeacherId = async (req, res) => {
       instructorID: userID,
     }).select("_id name");
 
+    console.log(
+      "Instructor courses:",
+      JSON.stringify(instructorCourses, null, 2)
+    );
+
     if (!instructorCourses.length) {
       return res
         .status(404)
@@ -527,6 +529,7 @@ const getStudentAttendanceByTeacherId = async (req, res) => {
     }
 
     const courseIds = instructorCourses.map((course) => course._id);
+    console.log("Course IDs to search:", courseIds);
 
     // Get student's enrollments in instructor's courses
     const enrolledCourses = await CourseApplication.find({
@@ -539,42 +542,70 @@ const getStudentAttendanceByTeacherId = async (req, res) => {
       model: "Course",
     });
 
+    console.log("Enrolled courses:", JSON.stringify(enrolledCourses, null, 2));
+
     if (enrolledCourses.length === 0) {
       return res
         .status(404)
         .json(ApiErrors(404, "Student is not enrolled in any of your courses"));
     }
 
+    // First, let's check if there are any attendance records at all
+    const allAttendance = await Attendance.find({}).limit(1);
+    console.log(
+      "Sample attendance record from database:",
+      JSON.stringify(allAttendance, null, 2)
+    );
+
     // Get attendance for each enrolled course
-    const attendance = await Attendance.find({
-      studentId: studentId,
-      courseId: { $in: courseIds },
-    })
+    const attendanceQuery = {
+      studentId: studentId, // Try without ObjectId conversion first
+      courseId: { $in: courseIds }, // Try without ObjectId conversion first
+    };
+
+    console.log("Attendance query:", JSON.stringify(attendanceQuery, null, 2));
+
+    // Try the query without ObjectId conversion first
+    let attendance = await Attendance.find(attendanceQuery)
       .populate("courseId", "name")
-      .populate("markedBy", "name email")
       .populate("studentId", "name")
       .sort({ date: -1 });
 
-    if (!attendance.length) {
-      // If no attendance records found, return default absent status for each enrolled course
-      const defaultAttendance = enrolledCourses.map((enrollment) => ({
-        studentId: { _id: studentId, name: "Student" }, // You might want to populate this properly
-        courseId: enrollment.courseID,
-        status: "Absent",
-        date: new Date(),
-        markedBy: null,
-        classDay: getClassDay(new Date()),
-      }));
+    console.log(
+      "Found attendance records (without ObjectId):",
+      JSON.stringify(attendance, null, 2)
+    );
 
+    // If no results, try with ObjectId conversion
+    if (!attendance || attendance.length === 0) {
+      console.log("Trying with ObjectId conversion...");
+      const attendanceQueryWithObjectId = {
+        studentId: new mongoose.Types.ObjectId(studentId),
+        courseId: {
+          $in: courseIds.map((id) => new mongoose.Types.ObjectId(id)),
+        },
+      };
+
+      console.log(
+        "Attendance query with ObjectId:",
+        JSON.stringify(attendanceQueryWithObjectId, null, 2)
+      );
+
+      attendance = await Attendance.find(attendanceQueryWithObjectId)
+        .populate("courseId", "name")
+        .populate("studentId", "name")
+        .sort({ date: -1 });
+
+      console.log(
+        "Found attendance records (with ObjectId):",
+        JSON.stringify(attendance, null, 2)
+      );
+    }
+
+    if (!attendance || attendance.length === 0) {
       return res
-        .status(200)
-        .json(
-          ApiSuccess(
-            200,
-            defaultAttendance,
-            "No attendance records found. Showing default status."
-          )
-        );
+        .status(404)
+        .json(ApiErrors(404, "No attendance records found for this student"));
     }
 
     res
